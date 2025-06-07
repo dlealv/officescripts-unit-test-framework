@@ -2,7 +2,7 @@
  * Provides static methods to assert value equality and exception throwing.
  * If an assertion fails, an informative 'Error' is thrown.
  */
-class Assert {
+export class Assert {
   /**
    * Asserts that the provided function throws an error.
    * Optionally checks the error type and message.
@@ -179,7 +179,7 @@ class Assert {
  * @remarks Test functions are expected to use `Assert` methods internally. If an assertion fails,
  * the error will be caught and reported with context.
  */
-class TestRunner {
+export class TestRunner {
   private static readonly START = "START" as const;
   private static readonly END = "END" as const;
   private static readonly HEADER_TK = "*";
