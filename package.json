@@ -1,1 +1,13 @@
-npm init -y
+{
+  "name": "office-script-testing",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "ts-node test/test.main.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.4.0"
+  }
+}
+
