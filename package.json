@@ -22,7 +22,9 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "ts-node wrappers/mainWrapper.ts",
+    "clean": "rimraf dist"
   },
   "keywords": [],
   "author": "",
