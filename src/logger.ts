@@ -77,7 +77,7 @@ interface Appender {
    * @throw ScriptError if the event doesn't belong to LOG_EVENT enum
    */
   log(message: string, event: LOG_EVENT): void
-  
+
   /** Get the last event messages sent to the appender.
    * @throw ScriptError If the appender was not instantiated.
    */
@@ -108,7 +108,7 @@ class ScriptError extends Error {
    * @param cause (Optional) The original error that caused this one. 
    *                         If provided the exception message will have a refernece to the cause
    */
-   constructor(message: string, public cause?: Error) {
+  constructor(message: string, public cause?: Error) {
     super(message)
     this.name = new.target.name // Dinamically take the name of the class
     if (cause?.message)
@@ -194,7 +194,7 @@ abstract class AbstractAppender {
  * ```
 */
 class ConsoleAppender extends AbstractAppender implements Appender {
-  private static _instance: ConsoleAppender // Instance of the singleton pattern
+  private static _instance: ConsoleAppender | null // Instance of the singleton pattern
   private _lastMsg = "" // The last log message sent by the appender
   private constructor() {
     super()
@@ -234,7 +234,7 @@ class ConsoleAppender extends AbstractAppender implements Appender {
    * i.e. if the singleton was not instanciated, it does a lazy initialization.
   */
   public static getInstance(): ConsoleAppender {
-    if(!ConsoleAppender._instance) {
+    if (!ConsoleAppender._instance) {
       ConsoleAppender._instance = new ConsoleAppender()
     }
     return ConsoleAppender._instance
@@ -261,7 +261,7 @@ class ConsoleAppender extends AbstractAppender implements Appender {
 
   /** Override the method from AbstractAppender. Instantiate the singleton,
    * if it was not instantiated */
-  
+
   private initIfNeeded(): void {
     if (!ConsoleAppender._instance) {
       ConsoleAppender._instance = new ConsoleAppender()
@@ -308,14 +308,14 @@ class ExcelAppender extends AbstractAppender implements Appender {
   private readonly _infoFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.INFO]
   private readonly _traceFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.TRACE]
 
-  private static _instance: ExcelAppender // Instance of the singleton pattern
-  private readonly _msgCellRng: ExcelScript.Range
+  private static _instance: ExcelAppender | null // Instance of the singleton pattern
+  private readonly _msgCellRng: ExcelScript.Range | undefined
   /*Have the last message content sent decoupled from _msgCellRng, to avoid issues with
   Excel not flushing the data on time*/
   private _lastMsg: string = ""
 
   // Private constructor to prevent user invocation
-  private constructor(msgCellRng: ExcelScript.Range = undefined,
+  private constructor(msgCellRng: ExcelScript.Range | undefined = undefined,
     errFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.ERROR],
     warnFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.WARN],
     infoFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.INFO],
@@ -325,9 +325,12 @@ class ExcelAppender extends AbstractAppender implements Appender {
     this._warnFont = warnFont
     this._infoFont = infoFont
     this._traceFont = traceFont
-    this._msgCellRng = msgCellRng
-    this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents)
-    this._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center)
+    // Only call methods on _msgCellRng if it is defined
+    if (this._msgCellRng) {
+      this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents)
+      this._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center);
+    }
+
   }
 
   /**
@@ -417,27 +420,35 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * @throw ScriptError in case event is not a valid LOG_EVENT enun value.
    */
   public log(msg: string, event: LOG_EVENT): void {
-    ExcelAppender.validateInstance()
-    AbstractAppender.assertValidEvent(event)
-    this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents) // Clear the previous message (if needed)
-    const FONT = ExcelAppender._COLOR_MAP[event] ?? null
-    if (FONT) { this._msgCellRng.getFormat().getFont().setColor(FONT) }
-    const MSG = super.formatMsg(msg, event) // fromparent
-    this._msgCellRng.setValue(MSG)
-    this._msgCellRng.getValue() // Explicitly access the cell to ensure it commits the update
-    this._lastMsg = MSG
+    ExcelAppender.validateInstance();
+    AbstractAppender.assertValidEvent(event);
+
+    if (this._msgCellRng) {
+      this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents); // Clear the previous message (if needed)
+      const FONT = ExcelAppender._COLOR_MAP[event] ?? null;
+      if (FONT) {
+        this._msgCellRng.getFormat().getFont().setColor(FONT);
+      }
+      const MSG = super.formatMsg(msg, event); // from parent
+      this._msgCellRng.setValue(MSG);
+      this._msgCellRng.getValue(); // Explicitly access the cell to ensure it commits the update
+      this._lastMsg = MSG;
+    } else { // TODO: Include in the unit testing
+      const MSG = `msgCellRng in '${this.constructor.name}' class is null or undefined, please defined when calling getInstance method`
+      throw new ScriptError(MSG)
+    }
   }
 
-   /**Shows instance configuration plus last message sent by the appender
-   * @throw ScriptError, if the singleton was not instantiated.
-  */
+  /**Shows instance configuration plus last message sent by the appender
+  * @throw ScriptError, if the singleton was not instantiated.
+ */
   public toString(): string { // Override the toString method
     ExcelAppender.validateInstance()
     const NAME = this.constructor.name
-    const MSG_CELL_RNG = ExcelAppender._instance._msgCellRng.getAddress()
-    const VALUE = this._msgCellRng.getValue()
+    const MSG_CELL_RNG = ExcelAppender._instance!._msgCellRng!.getAddress()
+    const VALUE = this._msgCellRng!.getValue()
     const MSG = VALUE != null ? VALUE.toString() : ""
-    const ERR_FONT = ExcelAppender._instance._errFont
+    const ERR_FONT = ExcelAppender._instance!._errFont
     const WARN_FONT = this._warnFont
     const INFO_FONT = this._infoFont
     const TRACE_FONT = this._traceFont
@@ -445,7 +456,7 @@ class ExcelAppender extends AbstractAppender implements Appender {
   }
 
   // Common safeguard method, where calling initIfNeeded doesn't make sense
-  private static validateInstance() {
+  private static validateInstance(): void {
     if (!ExcelAppender._instance) {
       const MSG = `In '${ExcelAppender.name}' class a singleton instance can't be undefined or null. Please invoke getInstance first`
       throw new ScriptError(MSG)
@@ -497,16 +508,16 @@ class Logger {
   private static readonly LEVEL_LABELS = Object.entries(Logger.LEVEL).reduce((acc, [key, value]) => {
     acc[value] = key;
     return acc;
-  }, {} as Record<number, string>)
+  }, {} as Record<string, string>)
   // Equivalent labels from ACION
   private static readonly ACTION_LABELS = Object.entries(Logger.ACTION).reduce((acc, [key, value]) => {
     acc[value] = key;
     return acc;
-  }, {} as Record<number, string>)
+  }, {} as Record<string, string>)
 
 
   // Attributes
-  private static _instance: Logger // Instance of the singleton pattern
+  private static _instance: Logger | null // Instance of the singleton pattern
   private static readonly DEFAUL_LEVEL = Logger.LEVEL.WARN
   private static readonly DEFAULT_ACTION = Logger.ACTION.EXIT
   private readonly _level: typeof Logger.LEVEL[keyof typeof Logger.LEVEL] = Logger.DEFAUL_LEVEL
@@ -528,28 +539,28 @@ class Logger {
    * @throw ScriptError: If the singleton was not instantiated */
   public getMessages(): string[] {
     Logger.validateInstance()
-    return Logger._instance._messages
+    return Logger._instance!._messages
   }
 
   /** @return Total number of error message events sent to the appender
    * @throw ScriptError: If the singleton was not instantiated */
   public getErrCnt(): number {
     Logger.validateInstance()
-    return Logger._instance._errCnt
+    return Logger._instance!._errCnt
   }
 
   /** @return Total number of warning events sent to the appender
    * @throw ScriptError: If the singleton was not instantiated */
   public getWarnCnt(): number {
     Logger.validateInstance()
-    return Logger._instance._warnCnt
+    return Logger._instance!._warnCnt
   }
 
   /** @return the action to take in case of errors or warning log events.
    * @throw ScriptError: If the singleton was not instantiated */
   public getAction(): typeof Logger.ACTION[keyof typeof Logger.ACTION] {
     Logger.validateInstance()
-    return Logger._instance._action
+    return Logger._instance!._action
   }
 
   /** @throw Retuns the level of verbosity allowed in the Logger. The levels are incremental, i.e.
@@ -558,13 +569,13 @@ class Logger {
    * @throw ScriptError: If the singleton was not instantiated */
   public getLevel(): typeof Logger.LEVEL[keyof typeof Logger.LEVEL] {
     Logger.validateInstance()
-    return Logger._instance._level
+    return Logger._instance!._level
   }
   /**@return: Array with appenders subscribed to the Logger
    * @throw ScriptError: If the singleton was not instantiated */
   public getAppenders(): Appender[] {
     Logger.validateInstance()
-    return Logger._instance._appenders
+    return Logger._instance!._appenders
   }
 
   // Setters
@@ -580,7 +591,7 @@ class Logger {
   public setAppenders(appenders: Appender[]) {
     Logger.validateInstance()
     Logger.assertUniqueAppenderTypes(appenders)
-    Logger._instance._appenders = appenders
+    Logger._instance!._appenders = appenders
   }
 
   /**
@@ -599,9 +610,9 @@ class Logger {
       const MSG = `You can't add an appender that is null of undefined in the '${Logger.name}' class`
       throw new ScriptError(MSG)
     }
-    const newAppenders = [...Logger._instance._appenders, appender]
+    const newAppenders = [...Logger._instance!._appenders, appender]
     Logger.assertUniqueAppenderTypes(newAppenders)
-    Logger._instance._appenders.push(appender)
+    Logger._instance!._appenders.push(appender)
   }
 
   /**
@@ -668,10 +679,10 @@ class Logger {
   */
   public removeAppender(appender: Appender): void {
     Logger.validateInstance()
-    const appenders = Logger._instance._appenders
+    const appenders = Logger._instance!._appenders
     if (!Logger.isEmptyArray(appenders)) {
-      const index = Logger._instance._appenders.indexOf(appender)
-      if (index > -1) { Logger._instance._appenders.splice(index, 1) } // 1 means to delete only one element
+      const index = Logger._instance!._appenders.indexOf(appender)
+      if (index > -1) { Logger._instance!._appenders.splice(index, 1) } // 1 means to delete only one element
     }
   }
 
@@ -724,30 +735,30 @@ class Logger {
    * @throw ScriptError: If the singleton was not instantiated */
   public hasErrors(): boolean {
     Logger.validateInstance()
-    return Logger._instance._errCnt > 0
+    return Logger._instance!._errCnt > 0
   }
 
   /**@return true if an error log event was sent to the appenders, otherwise false.
    * @throw ScriptError: If the singleton was not instantiated */
   public hasWarnings(): boolean {
     Logger.validateInstance()
-    return Logger._instance._warnCnt > 0
+    return Logger._instance!._warnCnt > 0
   }
 
   /**@return true if some error or warning event has been sent by the appenders, otherwise false.
    * @throw ScriptError: If the singleton was not instantiated */
   public hasMessages(): boolean {
     Logger.validateInstance()
-    return Logger._instance._messages.length > 0
+    return Logger._instance!._messages.length > 0
   }
 
   /** Resets the Logger history, i.e. state (errors, warnings, message summary). It doesn't reset the appenders.
    * @throw ScriptError: If the singleton was not instantiated */
   public clear(): void {
     Logger.validateInstance()
-    Logger._instance._messages = []
-    Logger._instance._errCnt = 0
-    Logger._instance._warnCnt = 0
+    Logger._instance!._messages = []
+    Logger._instance!._errCnt = 0
+    Logger._instance!._warnCnt = 0
   }
 
   /**Serializes the current state of the logger to a plain object, useful for
@@ -766,15 +777,15 @@ class Logger {
     messages: string[]
   } {
     Logger.validateInstance()
-    const levelKey = Object.keys(Logger.LEVEL).find(k => Logger.LEVEL[k as keyof typeof Logger.LEVEL] === Logger._instance._level);
-    const actionKey = Object.keys(Logger.ACTION).find(k => Logger.ACTION[k as keyof typeof Logger.ACTION] === Logger._instance._action);
+    const levelKey = Object.keys(Logger.LEVEL).find(k => Logger.LEVEL[k as keyof typeof Logger.LEVEL] === Logger._instance!._level);
+    const actionKey = Object.keys(Logger.ACTION).find(k => Logger.ACTION[k as keyof typeof Logger.ACTION] === Logger._instance!._action);
 
     return {
       level: levelKey ?? "UNKNOWN",
       action: actionKey ?? "UNKNOWN",
-      errorCount: Logger._instance._errCnt,
-      warningCount: Logger._instance._warnCnt,
-      messages: [...Logger._instance._messages]
+      errorCount: Logger._instance!._errCnt,
+      warningCount: Logger._instance!._warnCnt,
+      messages: [...Logger._instance!._messages]
     }
   }
 
@@ -788,7 +799,7 @@ class Logger {
       Logger.LEVEL[key as keyof typeof Logger.LEVEL] === this._level)
     const actionTk = Object.keys(Logger.ACTION).find(key =>
       Logger.ACTION[key as keyof typeof Logger.ACTION] === this._action)
-    return `${NAME}: {Level: "${levelTk}", Action: "${actionTk}", Error Count: "${Logger._instance._errCnt}", Warning Count: "${Logger._instance._warnCnt}"}`
+    return `${NAME}: {Level: "${levelTk}", Action: "${actionTk}", Error Count: "${Logger._instance!._errCnt}", Warning Count: "${Logger._instance!._warnCnt}"}`
   }
 
   /**
@@ -805,13 +816,13 @@ class Logger {
    */
   private log(msg: string, event: LOG_EVENT): void {
     Logger.initIfNeeded() // lazy initialization of the singleton with default parameters
-    const SEND_EVENTS = Logger._instance._level != Logger.LEVEL.OFF
+    const SEND_EVENTS = Logger._instance!._level != Logger.LEVEL.OFF
     if (Logger.isEmptyArray(this.getAppenders())) {
       this.addAppender(ConsoleAppender.getInstance()) // lazy initialization at least the basic appender
     }
     if (SEND_EVENTS) { // Sends events through out the appenders
-      if (Logger._instance._level >= event) { // only if the verbose level allows it
-        for (const appender of Logger._instance._appenders) { // sends to all appenders
+      if (Logger._instance!._level >= event) { // only if the verbose level allows it
+        for (const appender of Logger._instance!._appenders) { // sends to all appenders
           appender.log(msg, event) // It can't be null/undefined at this point (no need to prevent it)
         }
       }
@@ -819,25 +830,25 @@ class Logger {
 
     if (SEND_EVENTS && (event <= LOG_EVENT.WARN)) {// Only collects errors or warnings event messages
       // Updating the counter
-      if (event === LOG_EVENT.ERROR) ++Logger._instance._errCnt
-      if (event === LOG_EVENT.WARN) ++Logger._instance._warnCnt
+      if (event === LOG_EVENT.ERROR) ++Logger._instance!._errCnt
+      if (event === LOG_EVENT.WARN) ++Logger._instance!._warnCnt
       // Updating the message. Assumes first appender is representative (message for all apenders are the same)
-      const LAST_MSG = Logger._instance._appenders[0].getLastMsg()
-      Logger._instance._messages.push(LAST_MSG)
-      if (Logger._instance._action === Logger.ACTION.EXIT) {
+      const LAST_MSG = Logger._instance!._appenders[0].getLastMsg()
+      Logger._instance!._messages.push(LAST_MSG)
+      if (Logger._instance!._action === Logger.ACTION.EXIT) {
         throw new ScriptError(LAST_MSG)
       }
     }
   }
 
   /** Returns the corresonding string label for the level. */
-  private static getLevelLabel():string {
-    return Logger.LEVEL_LABELS[Logger._instance._level]
+  private static getLevelLabel(): string {
+    return Logger.LEVEL_LABELS[Logger._instance!._level]
   }
 
   /** Returns the corresonding string label for the action. */
-  private static getActionLabel():string {
-    return Logger.ACTION_LABELS[Logger._instance._action]
+  private static getActionLabel(): string {
+    return Logger.ACTION_LABELS[Logger._instance!._action]
   }
 
   /* Enforce instantiation lazily, if the user didn't invoke getInstance(), provides a logger
