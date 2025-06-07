@@ -9,17 +9,15 @@
     "strict": true,
     "skipLibCheck": true,
     "typeRoots": [
-      "./src/types",
+      ".",
       "./node_modules/@types"
-    ],
-    "allowJs": true
+    ]
   },
   "include": [
     "src/**/*",
     "test/**/*",
     "mocks/**/*",
-    "wrappers/**/*",
-    "src/types/**/*"
+    "wrappers/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -1,3 +1,4 @@
+/// <reference path="../office-scripts.d.ts" />
 import { ExcelScript } from "../mocks/excelscript.mock";
 import "../test/unit-test-framework";
 import "../src/logger";
