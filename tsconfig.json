@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    // Specify ECMAScript target version (ES2020 supports modern syntax like optional chaining)
+    "target": "ES2020",
+
+    // Set the module system (CommonJS is standard for Node.js)
+    "module": "commonjs",
+
+    // Folder containing your TypeScript source files
+    "rootDir": "src",
+
+    // Output directory for compiled JavaScript files
+    "outDir": "dist",
+
+    // Enable all strict type-checking options
+    "strict": true,
+
+    // Allow default imports from modules without needing `.default`
+    "esModuleInterop": true,
+
+    // Ensure consistent casing in imports (especially useful on case-sensitive systems)
+    "forceConsistentCasingInFileNames": true,
+
+    // Skip type checking of all declaration files (`.d.ts`)
+    "skipLibCheck": true
+  },
+
+  // Include source and test files for compilation and type checking
+  "include": ["src", "test"]
+}
+
