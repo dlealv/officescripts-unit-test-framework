@@ -62,12 +62,12 @@ npx eslint --init
 | **Task**         | **Command**                                 |
 |------------------|---------------------------------------------|
 | Build project    | `npm run build`                             |
-| Run tests        | `npm test`                                  |
+| Run tests        | `npm run test`                              |
 | Lint (optional)  | `npm run lint` (if configured)              |
 
 **How it works:**  
-- `npm run build` runs the TypeScript compiler via the `"build": "tsc"` script.
-- `npm test` runs tests via `"test": "ts-node wrappers/mainWrapper.ts"`, which executes all tests in `test/main.ts` using mock OfficeScript objects.
+- `npm run build` runs the TypeScript compiler via the `"build": "ts-node"` script.
+- `npm test` runs tests via `"test": "ts-node --project tsconfig.test.json wrappers/main-wrapper.ts"`, which executes all tests in `test/main.ts` using mock OfficeScript objects.
 
 ---
 
