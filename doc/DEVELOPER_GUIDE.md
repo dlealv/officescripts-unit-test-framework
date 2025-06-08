@@ -19,6 +19,7 @@ It is developed in TypeScript to ensure code can run both in the Office Scripts 
 - **`tsconfig.json`** – TypeScript configuration for production build.
 - **`tsconfig.test.json`** – TypeScript configuration for local testing. Local tests are executed in a Node.js TypeScript environment using mocks and wrappers that simulate the Office Scripts API. You do not need Excel or Office Online for local testing—just `run npm test` in your terminal
 - **`.github/workflows/ci.yml`** – GitHub Actions workflow for Continuous Integration.
+- **`eslint.config.js`** – ESLint configuration in ESM format.
 
 ## TypeScript Configuration
 
@@ -50,24 +51,26 @@ npx tsc --init
 # 3. Install dependencies (adjust as needed for your project)
 npm install acorn acorn-walk arg create-require diff make-error undici-types v8-compile-cache-lib yn
 
-# 4. (Optional) Install linting tools
-npm install eslint --save-dev
-npx eslint --init
+# 4. Install linting tools and plugins
+npm run eslint:setup
 ```
 
 ---
 
-### 2. **Build & Test Locally**
+### 2. **Build, Test & Lint Locally**
 
 | **Task**         | **Command**                                 |
 |------------------|---------------------------------------------|
 | Build project    | `npm run build`                             |
 | Run tests        | `npm run test`                              |
-| Lint (optional)  | `npm run lint` (if configured)              |
+| Lint code        | `npm run lint`                              |
+| ESLint setup     | `npm run eslint:setup`                      |
 
-**How it works:**  
-- `npm run build` runs the TypeScript compiler via the `"build": "ts-node"` script.
-- `npm test` runs tests via `"test": "ts-node --project tsconfig.test.json wrappers/main-wrapper.ts"`, which executes all tests in `test/main.ts` using mock OfficeScript objects.
+#### How it works:
+- `npm run build` copies TypeScript source from `src/` to `dist/` and strips test-only code.
+- `npm test` runs tests using `ts-node` with `tsconfig.test.json` and the local OfficeScript mocks.
+- `npm run lint` lints all `.ts`, `.js`, and `.md` files.
+- `npm run eslint:setup` installs/updates ESLint and its plugins.
 
 ---
 
@@ -128,6 +131,77 @@ jobs:
 
 ---
 
+## Linting (ESLint)
+
+### Setup
+
+- Run `npm run eslint:setup` to install or update ESLint and plugins:
+  - `eslint`
+  - `@typescript-eslint/parser`
+  - `@typescript-eslint/eslint-plugin`
+  - `eslint-plugin-markdown`
+- The configuration file is **`eslint.config.js`** in the project root and uses ESM (`import`/`export`) syntax.
+- Ensure your `package.json` has `"type": "module"` at the top level (not inside dependencies).
+
+### Usage
+
+- Run `npm run lint` to lint all `.ts`, `.js`, and `.md` files.
+- You can customize rules or extend the configuration in `eslint.config.js`.
+
+#### Example ESLint Config
+
+```js
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+
+export default [
+  {
+    files: ["**/*.ts", "**/*.js"],
+    languageOptions: { parser: tsParser },
+    plugins: { "@typescript-eslint": tseslint },
+    rules: { /* Add your rules here */ }
+  },
+  {
+    files: ["**/*.md"],
+    plugins: { "markdown": require("eslint-plugin-markdown") }
+  }
+];
+```
+
+### Troubleshooting
+
+- **ESLint ESM Warning:**  
+  If you see  
+  ```
+  Warning: Module type of .../eslint.config.js... is not specified and it doesn't parse as CommonJS...
+  ```
+  - Ensure `"type": "module"` is present at the root of your `package.json`
+  - Try renaming `eslint.config.js` to `eslint.config.mjs` if necessary
+
+- **Plugin Not Found:**  
+  ```
+  Cannot find package '@typescript-eslint/eslint-plugin'...
+  ```
+  - Run `npm run eslint:setup`
+
+- If you encounter other issues, try removing `node_modules` and `package-lock.json`, then running `npm install` again.
+
+---
+
+## Scripts Reference
+
+| **Script**         | **Description**                                                      |
+|--------------------|----------------------------------------------------------------------|
+| `setup`            | Install all dependencies and initialize TypeScript config            |
+| `build`            | Copy TypeScript files and strip test-only code for distribution      |
+| `copy:ts`          | Copy TypeScript files from `src/` to `dist/`                         |
+| `strip:testonly`   | Remove test-only code regions from files in `dist/`                  |
+| `test`             | Run tests using ts-node                                              |
+| `eslint:setup`     | Install or update ESLint and its plugins                             |
+| `lint`             | Lint all `.ts`, `.js`, and `.md` files                               |
+
+---
+
 ## Notes on Office Scripts Compatibility
 
 - All code in `src/` must use only APIs available in [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/).
@@ -166,7 +240,7 @@ jobs:
 | Add a dev dependency       | `npm install --save-dev <package>`                            |
 | Build TypeScript           | `npm run build`                                               |
 | Run tests                  | `npm test`                                                    |
-| Lint code (optional)       | `npm run lint` (if configured)                                |
+| Lint code                  | `npm run lint`                                                |
 | Stage all changes          | `git add -A`                                                  |
 | Commit changes             | `git commit -m "your message"`                                |
 | Push to GitHub             | `git push`                                                    |
@@ -182,14 +256,15 @@ jobs:
 
 - If you encounter type or runtime errors, double-check your mocks and type declarations to ensure compatibility with the real Office Scripts API.
 - For new test files, import them in `test/main.ts` or ensure your test runner discovers them.
+- For ESLint issues, see the "Linting (ESLint)" section above.
 
 ---
 
 ## Further Improvements
 
-- Add linting and/or code coverage tools for stricter code quality.
+- Add code coverage tools for stricter code quality.
 - Enhance your mock OfficeScript API as needed for more advanced scenarios.
-- Keep your README updated as your workflow evolves!
+- Keep your README and this guide updated as your workflow evolves!
 
 ---
 
