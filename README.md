@@ -189,7 +189,7 @@ function main(workbook: ExcelScript.Workbook) {
 
 ## License
 
-MIT
+See [LICENSE](LICENSE) for details.
 
 ---
 
