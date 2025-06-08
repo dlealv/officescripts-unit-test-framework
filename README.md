@@ -15,26 +15,23 @@ Add robust, structured logs to your Excel automations with control over log leve
 
 ---
 
-## ⚡ Lazy Initialization (How It Works)
+## Lazy Initialization: What You Need to Know
 
 - **Logger Singleton:**  
-  - You do **not** have to manually create the Logger instance with `Logger.getInstance()` before logging.  
-  - If you call any logging method directly (such as `Logger.info("...")`) before explicit initialization, the Logger instance will be **automatically created** with **default settings** (`WARN` level, `EXIT` action).
-
+  - You do **not** have to manually create the Logger instance before using it.  
+  - If you call any logging method (e.g., `Logger.info("...")`) before calling `getInstance()`, the Logger will be **automatically created** with default settings (`WARN` level, `EXIT` action).
 - **Default ConsoleAppender:**  
-  - If you log a message and **no appender** has been added, a `ConsoleAppender` will be **automatically created and added**.
-  - This ensures logs are never lost, even if you forget to add an appender.
-
+  - If you log a message and **no appender** has been added, a `ConsoleAppender` will be **automatically created and added**. This ensures logs are never lost, even if you forget to add an appender.
 - **Appenders:**  
-  - Appenders are singletons and use lazy initialization, especially `ConsoleAppender` and `ExcelAppender`.  
-  - For `ExcelAppender`, the first call requires the cell range; subsequent calls return the existing instance and ignore new arguments.
+  - Appender singletons (`ConsoleAppender`, `ExcelAppender`) are lazily initialized.  
+  - For `ExcelAppender`, the first call requires the cell range; subsequent calls return the singleton and ignore new arguments.
 
-**Result:**  
-You can start using the Logger immediately, but for best control, explicitly initialize it and add appenders as shown below.
+**Summary:**  
+You can start logging immediately, but for best results (and explicit configuration), initialize the Logger and add your desired appenders as shown below.
 
 ---
 
-## Quick Start
+## Getting Started
 
 ### 1. Add the Logger to Your Script
 
@@ -46,18 +43,154 @@ Copy `src/logger.ts` into your Office Scripts project.
 Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE);
 Logger.addAppender(ConsoleAppender.getInstance());
 ```
-
-> **Tip:** If you skip this step and just call `Logger.info("...")`, the logger will be initialized with default settings and a console appender.
+> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings and a console appender.
 
 ---
 
 ## Usage Examples
 
-### Basic Logging (with Lazy Initialization)
+### Basic Logging
 
 ```typescript
-// This works even if you haven't called getInstance() or added an appender.
-// Logger will be auto-initialized at WARN level, EXIT action, with a ConsoleAppender.
 Logger.info("Script started");
 Logger.warn("This might be a problem");
-Logger
+Logger.error("A fatal error occurred");
+Logger.trace("Step-by-step details for debugging");
+```
+> Even if you haven’t explicitly initialized the Logger or added an appender, logging will still work (see Lazy Initialization above).
+
+### Logging to Excel Cell
+
+```typescript
+function main(workbook: ExcelScript.Workbook) {
+  // Set up logger to send logs to cell B1
+  const cell = workbook.getActiveWorksheet().getRange("B1");
+  Logger.clearInstance(); // (optional, if rerunning this script multiple times)
+  Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE);
+  Logger.addAppender(ExcelAppender.getInstance(cell));
+
+  Logger.info("Log written to Excel!");
+  Logger.warn("This warning appears in cell B1.");
+}
+```
+
+---
+
+## Configuration
+
+### Log Levels
+
+Set the **minimum severity** of messages to be logged:
+
+- `Logger.LEVEL.OFF`: No logs
+- `Logger.LEVEL.ERROR`: Only errors
+- `Logger.LEVEL.WARN`: Errors and warnings (default)
+- `Logger.LEVEL.INFO`: Errors, warnings, and info
+- `Logger.LEVEL.TRACE`: All messages (most verbose)
+
+### Error Handling Action
+
+- `Logger.ACTION.CONTINUE`: Log the event, continue script execution
+- `Logger.ACTION.EXIT`: Log the event and throw a `ScriptError`, terminating the script (default)
+
+### Appenders
+
+- `ConsoleAppender`: Output to the Office Scripts console  
+  `Logger.addAppender(ConsoleAppender.getInstance());`
+- `ExcelAppender`: Output to a specified Excel cell, with color coding  
+  `Logger.addAppender(ExcelAppender.getInstance(cellRange));`
+- **Only one of each appender type allowed; duplicates throw an error.**
+
+---
+
+## Advanced Usage
+
+### Manage Appenders
+
+- **Add:** `Logger.addAppender(appender)`
+- **Remove:** `Logger.removeAppender(appender)`
+- **Replace all:** `Logger.setAppenders([appender1, appender2])`
+
+### Inspect Logger State
+
+- **Get all error/warning messages:** `logger.getMessages()`
+- **Get error/warning counts:** `logger.getErrCnt()`, `logger.getWarnCnt()`
+- **Clear state (not appenders):** `logger.clear()`
+- **Export state:** `logger.exportState()`
+
+### Reset Logger
+
+- Use `Logger.clearInstance()` to reset the singleton and allow new configuration (useful in test loops or if your script reruns in the same session).
+
+---
+
+## API Reference
+
+### Main Methods
+
+| Method             | Description                                           |
+|--------------------|------------------------------------------------------|
+| `Logger.error()`   | Log error (always logged if level ≥ ERROR)           |
+| `Logger.warn()`    | Log warning (if level ≥ WARN)                        |
+| `Logger.info()`    | Log info (if level ≥ INFO)                           |
+| `Logger.trace()`   | Log trace/debug details (if level ≥ TRACE)           |
+
+### Static Properties
+
+- `Logger.LEVEL`: Log levels (`OFF`, `ERROR`, `WARN`, `INFO`, `TRACE`)
+- `Logger.ACTION`: Error-handling actions (`CONTINUE`, `EXIT`)
+
+---
+
+## Complete Example
+
+```typescript
+function main(workbook: ExcelScript.Workbook) {
+  // Reset logger and set up
+  Logger.clearInstance();
+  Logger.getInstance(Logger.LEVEL.TRACE, Logger.ACTION.CONTINUE);
+
+  // Add appenders
+  Logger.addAppender(ConsoleAppender.getInstance());
+  const logCell = workbook.getActiveWorksheet().getRange("C2");
+  Logger.addAppender(ExcelAppender.getInstance(logCell));
+
+  // Logging
+  Logger.info("Script started.");
+  Logger.trace("This is a trace message.");
+  Logger.warn("This is a warning.");
+  Logger.error("This is an error!"); // If ACTION.EXIT, this throws and aborts the script
+}
+```
+
+---
+
+## Troubleshooting & FAQ
+
+- **What if I call Logger methods before getInstance()?**  
+  Lazy initialization means logging always works, with default config and console output.
+
+- **What happens if I don’t add an appender?**  
+  Logger auto-adds a `ConsoleAppender`.
+
+- **Can I log to both console and Excel?**  
+  Yes, add both appenders.
+
+- **How do I change log level or action after initialization?**  
+  Use `Logger.clearInstance()` and then call `getInstance()` with new options.
+
+- **Why do I get a `ScriptError`?**  
+  If `Logger.ACTION.EXIT` is set, errors/warnings throw and abort the script.
+
+- **Why can I only add one of each appender type?**  
+  To avoid duplicate logs on the same channel; each appender represents a unique output.
+
+---
+
+## License
+
+MIT
+
+---
+
+*For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) if available.*
