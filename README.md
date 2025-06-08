@@ -1,6 +1,6 @@
 # Office Scripts Logging Framework – User Guide
 
-A lightweight, extensible logging framework for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/) (ExcelScript), inspired by Log4j.  
+A lightweight, extensible logging framework for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/) (ExcelScript), inspired in frameworks like Log4j.  
 Add robust, structured logs to your Excel automations with control over log levels, appenders, and error handling.
 
 ---
@@ -22,9 +22,6 @@ Add robust, structured logs to your Excel automations with control over log leve
   - If you call any logging method (e.g., `Logger.info("...")`) before calling `getInstance()`, the Logger will be **automatically created** with default settings (`WARN` level, `EXIT` action).
 - **Default ConsoleAppender:**  
   - If you log a message and **no appender** has been added, a `ConsoleAppender` will be **automatically created and added**. This ensures logs are never lost, even if you forget to add an appender.
-- **Appenders:**  
-  - Appender singletons (`ConsoleAppender`, `ExcelAppender`) are lazily initialized.  
-  - For `ExcelAppender`, the first call requires the cell range; subsequent calls return the singleton and ignore new arguments.
 
 **Summary:**  
 You can start logging immediately, but for best results (and explicit configuration), initialize the Logger and add your desired appenders as shown below.
@@ -40,10 +37,13 @@ Copy `src/logger.ts` into your Office Scripts project.
 ### 2. Initialize the Logger (Recommended)
 
 ```typescript
-Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE);
-Logger.addAppender(ConsoleAppender.getInstance());
+// Verbosity level up to information event, and doesn't stop in case or error/warning
+Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
+Logger.addAppender(ConsoleAppender.getInstance()) // Add console appender
 ```
-> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings and a console appender.
+> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings and a console appender:
+* `Logger` will be initialized with with verbosity level up to warnings and in case of error/warning stops the execution throwing a `ScriptError` error.
+* The default appender used will be the `ConsoleAppender` which doesn't require any configuration input parameter.
 
 ---
 
@@ -52,10 +52,10 @@ Logger.addAppender(ConsoleAppender.getInstance());
 ### Basic Logging
 
 ```typescript
-Logger.info("Script started");
-Logger.warn("This might be a problem");
-Logger.error("A fatal error occurred");
-Logger.trace("Step-by-step details for debugging");
+Logger.info("Script started")
+Logger.warn("This might be a problem")
+Logger.error("A fatal error occurred")
+Logger.trace("Step-by-step details for debugging")
 ```
 > Even if you haven’t explicitly initialized the Logger or added an appender, logging will still work (see Lazy Initialization above).
 
@@ -66,11 +66,11 @@ function main(workbook: ExcelScript.Workbook) {
   // Set up logger to send logs to cell B1
   const cell = workbook.getActiveWorksheet().getRange("B1");
   Logger.clearInstance(); // (optional, if rerunning this script multiple times)
-  Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE);
+  Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
   Logger.addAppender(ExcelAppender.getInstance(cell));
 
-  Logger.info("Log written to Excel!");
-  Logger.warn("This warning appears in cell B1.");
+  Logger.info("Log written to Excel!")
+  Logger.warn("This warning appears in cell B1.")
 }
 ```
 
@@ -92,14 +92,14 @@ Set the **minimum severity** of messages to be logged:
 
 - `Logger.ACTION.CONTINUE`: Log the event, continue script execution
 - `Logger.ACTION.EXIT`: Log the event and throw a `ScriptError`, terminating the script (default)
+  > Previous configuration only applies for log events sent to the appenders, i.e. if level is `Logger.LEVEL.OFF` no log events will be sent to the appenders.
 
 ### Appenders
 
 - `ConsoleAppender`: Output to the Office Scripts console  
-  `Logger.addAppender(ConsoleAppender.getInstance());`
+  `Logger.addAppender(ConsoleAppender.getInstance())`
 - `ExcelAppender`: Output to a specified Excel cell, with color coding  
-  `Logger.addAppender(ExcelAppender.getInstance(cellRange));`
-- **Only one of each appender type allowed; duplicates throw an error.**
+  `Logger.addAppender(ExcelAppender.getInstance(cellRange))`
 
 ---
 
@@ -107,16 +107,17 @@ Set the **minimum severity** of messages to be logged:
 
 ### Manage Appenders
 
-- **Add:** `Logger.addAppender(appender)`
-- **Remove:** `Logger.removeAppender(appender)`
-- **Replace all:** `Logger.setAppenders([appender1, appender2])`
+- Add: `Logger.addAppender(appender)`
+- Remove: `Logger.removeAppender(appender)`
+- Replace all: `Logger.setAppenders([appender1, appender2])`
+- **Only one of each appender type allowed; duplicates throw an error.**
 
 ### Inspect Logger State
 
-- **Get all error/warning messages:** `logger.getMessages()`
-- **Get error/warning counts:** `logger.getErrCnt()`, `logger.getWarnCnt()`
-- **Clear state (not appenders):** `logger.clear()`
-- **Export state:** `logger.exportState()`
+- Get an array with all error/warning messages sent to the appenders: `logger.getMessages()`
+- Get error/warning counts: `logger.getErrCnt()`, `logger.getWarnCnt()`
+- Clear state (messages, counters, but not appenders): `logger.clear()`
+- Export state:** `logger.exportState()`
 
 ### Reset Logger
 
@@ -128,12 +129,12 @@ Set the **minimum severity** of messages to be logged:
 
 ### Main Methods
 
-| Method             | Description                                           |
-|--------------------|------------------------------------------------------|
-| `Logger.error()`   | Log error (always logged if level ≥ ERROR)           |
-| `Logger.warn()`    | Log warning (if level ≥ WARN)                        |
-| `Logger.info()`    | Log info (if level ≥ INFO)                           |
-| `Logger.trace()`   | Log trace/debug details (if level ≥ TRACE)           |
+| Method                           | Description                             -                          |
+|----------------------------------|--------------------------------------------------------------------|
+| `Logger.error(message:string)`   | Logs error event with a message, if `level >= LEVEL.ERROR`         |
+| `Logger.warn(message:string)`    | Log warning with a message, if `level >= LEVEL.WARN`               |
+| `Logger.info(message:string)`    | Log info with a message, if `level >= LEVEL.INFO`                  |
+| `Logger.trace(message:string)`   | Log trace/debug details with a message, if `level >= LEVEL.TRACE`  |
 
 ### Static Properties
 
@@ -147,18 +148,19 @@ Set the **minimum severity** of messages to be logged:
 ```typescript
 function main(workbook: ExcelScript.Workbook) {
   // Reset logger and set up
-  Logger.clearInstance();
+  Logger.clearInstance()
+  // Verbosity level up to trace log events and in case of error/warning continues the script execution
   Logger.getInstance(Logger.LEVEL.TRACE, Logger.ACTION.CONTINUE);
 
   // Add appenders
-  Logger.addAppender(ConsoleAppender.getInstance());
-  const logCell = workbook.getActiveWorksheet().getRange("C2");
-  Logger.addAppender(ExcelAppender.getInstance(logCell));
+  Logger.addAppender(ConsoleAppender.getInstance())
+  const logCell = workbook.getActiveWorksheet().getRange("C2")
+  Logger.addAppender(ExcelAppender.getInstance(logCell))
 
   // Logging
-  Logger.info("Script started.");
-  Logger.trace("This is a trace message.");
-  Logger.warn("This is a warning.");
+  Logger.info("Script started.")
+  Logger.trace("This is a trace message.")
+  Logger.warn("This is a warning.")
   Logger.error("This is an error!"); // If ACTION.EXIT, this throws and aborts the script
 }
 ```
@@ -180,10 +182,12 @@ function main(workbook: ExcelScript.Workbook) {
   Use `Logger.clearInstance()` and then call `getInstance()` with new options.
 
 - **Why do I get a `ScriptError`?**  
-  If `Logger.ACTION.EXIT` is set, errors/warnings throw and abort the script.
+  If `Logger.ACTION.EXIT` is set and `Logger.LEVEL != LOGGER.OFF`, errors/warnings throw and abort the script.
 
 - **Why can I only add one of each appender type?**  
   To avoid duplicate logs on the same channel; each appender represents a unique output.
+- **Why I can't throw a different message to different appenders?**
+  As per design, for consistency, all channels (appenders) will receive the same log event message to **all** subscribed appenders  
 
 ---
 
