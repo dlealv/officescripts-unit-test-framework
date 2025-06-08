@@ -30,7 +30,8 @@
  * Logger.addAppender(ConsoleAppender.getInstance())
  * Logger.info("Script started") // Output: [INFO] Script started
  * ```
- * @remarks Designed and tested for Office Scripts runtime. Extendable with custom appenders via the 'Appender' interface.
+ * @remarks Designed and tested for Office Scripts and Node/ts-node runtime environment. 
+ * Extendable with custom appenders via the 'Appender' interface.
  * @author David Leal
  * @date 2025-06-03
  * @version 1.0
@@ -309,13 +310,13 @@ class ExcelAppender extends AbstractAppender implements Appender {
   private readonly _traceFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.TRACE]
 
   private static _instance: ExcelAppender | null // Instance of the singleton pattern
-  private readonly _msgCellRng: ExcelScript.Range | undefined
+  private readonly _msgCellRng: ExcelScript.Range
   /*Have the last message content sent decoupled from _msgCellRng, to avoid issues with
   Excel not flushing the data on time*/
   private _lastMsg: string = ""
 
   // Private constructor to prevent user invocation
-  private constructor(msgCellRng: ExcelScript.Range | undefined = undefined,
+  private constructor(msgCellRng: ExcelScript.Range,
     errFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.ERROR],
     warnFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.WARN],
     infoFont: string = ExcelAppender._COLOR_MAP[LOG_EVENT.INFO],
@@ -325,11 +326,9 @@ class ExcelAppender extends AbstractAppender implements Appender {
     this._warnFont = warnFont
     this._infoFont = infoFont
     this._traceFont = traceFont
-    // Only call methods on _msgCellRng if it is defined
-    if (this._msgCellRng) {
-      this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents)
-      this._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center);
-    }
+    this._msgCellRng = msgCellRng
+    this._msgCellRng.clear(ExcelScript.ClearApplyTo.contents)
+    this._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center)
 
   }
 
@@ -366,8 +365,10 @@ class ExcelAppender extends AbstractAppender implements Appender {
         const MSG = `${ExcelAppender.name} requires a valid ExcelScript.Range for input argument msgCellRng.`
         throw new ScriptError(MSG)
       }
-      if (msgCellRng.getCellCount() != 1) {
-        const MSG = `${ExcelAppender.name} requires input argument msgCellRng represents a single Excel cell.`
+      // Checking if the range is a single cell
+  
+      if (msgCellRng.getCellCount() !== 1) {
+        const MSG = "ExcelAppender requires input argument msgCellRng represents a single Excel cell."
         throw new ScriptError(MSG)
       }
       // Checking valid hexadecimal color

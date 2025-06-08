@@ -23,10 +23,18 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "ts-node wrappers/mainWrapper.ts",
-    "clean": "rimraf dist"
+    "test": "ts-node wrappers/mainWrapper.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "keywords": [
+    "office-scripts",
+    "logging",
+    "logger",
+    "log4j",
+    "framework",
+    "typescript",
+    "excel",
+    "structured-logging"
+  ],
+  "author": "David Leal <dleal67@gmail.com>",
+  "license": "GPL-3.0-or-later"
 }

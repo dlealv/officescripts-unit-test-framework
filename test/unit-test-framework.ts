@@ -1,15 +1,17 @@
-//****************************************************
-// Unit Testing Framework
-//****************************************************
-
 // ====================================================
 // Lightweight unit testing framework for Office Script
 // ====================================================
 
 /**
- * Lightweight, extensible unit testing framework for Office Scripts, inspired by libraries like jUnit.
- * It anable basic assertion and also defines how the test cases are executed.
- * /
+ * Lightweight, extensible unit testing framework for Office Scripts, inspired by libraries like JUnit.
+ * Provides basic assertion capabilities and defines the structure for executing test cases.
+ * Designed for easy integration and extension within Office Scripts projects.
+ *
+ * @remarks See the documentation for the Assert and TestRunner classes for assertion details and test execution control.
+ * @author David Leal
+ * @date 2025-06-03
+ * @version 1.0
+ */
 
 /** Utility class for writing unit-test-style assertions.
  * Provides static methods to assert value equality and exception throwing.
@@ -40,7 +42,6 @@ class Assert {
     message: string = ""
   ): asserts fn is () => never {
     const MSG = message ? `${message}: ` : ""
-
     try {
       fn()
     } catch (e: unknown) {

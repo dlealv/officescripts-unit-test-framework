@@ -1,3 +1,16 @@
+// excelscript.mock.ts
+//
+// - This file provides a minimal mock implementation of the ExcelScript namespace for local testing of Office Scripts.
+// - The mocks simulate enough ExcelScript behavior to allow isolated unit tests and logger validation without the Office Scripts runtime.
+// - For more realism, expand methods or add features as needed for your test scenarios.
+//
+// Notes on implementation:
+// - Enum values (ClearApplyTo, VerticalAlignment) match those in the real ExcelScript API.
+// - The Range class holds a value and address, with methods to clear and format the cell, and to get/set values.
+// - Worksheet manages named ranges and provides access by address, creating them as needed.
+// - Workbook manages named worksheets and can retrieve them by name or return the "active" worksheet (first sheet).
+// - At the end, the namespace is attached to globalThis for compatibility with test environments (Node, ts-node).
+
 export namespace ExcelScript {
   export enum ClearApplyTo {
     contents = "contents"
@@ -5,6 +18,7 @@ export namespace ExcelScript {
   export enum VerticalAlignment {
     center = "center"
   }
+
   export class Range {
     private value: any = "";
     private address: string;
@@ -72,4 +86,10 @@ export namespace ExcelScript {
       return this.sheets[sheetNames[0]];
     }
   }
+}
+
+// Make ExcelScript available globally for Node/ts-node test environments
+if (typeof globalThis !== "undefined" && typeof ExcelScript !== "undefined") {
+  // @ts-ignore
+  globalThis.ExcelScript = ExcelScript;
 }

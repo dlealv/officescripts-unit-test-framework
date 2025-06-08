@@ -1,26 +1,36 @@
+// TypeScript configuration for this Office Scripts project and its tests.
+//
+// - We set "strictNullChecks" to false because Office Scripts APIs return 'undefined' in many cases
+//   where TypeScript would expect 'null', and enabling strict null checks would cause excessive
+//   type errors or force verbose code without practical benefit in this context.
+//
+// - "mocks" and "wrappers" directories are included for testability and local development:
+//     * "mocks" provides stand-ins for Office Scripts APIs, enabling unit testing outside Excel online.
+//     * "wrappers" adapt Office Scripts APIs to be more test-friendly and to allow dependency injection.
+//
+// - All strict type checks except strictNullChecks are enabled for code quality.
+// - Side comments explain individual settings inline.
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "outDir": "dist",
-    "rootDir": ".",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
+    "target": "es2016", // ECMAScript 2016 output
+    "module": "commonjs", // Node.js/CommonJS modules
+    "rootDir": ".", // Use project root as source root
+    "esModuleInterop": true, // Enable default import compatibility
+    "forceConsistentCasingInFileNames": true, // File name casing consistency
+    "strictNullChecks": false, // See rationale above
+    "strict": true, // Enable all other strict type-checking
+    "skipLibCheck": true, // Skip type-checking for .d.ts files
     "typeRoots": [
-      ".",
-      "./node_modules/@types"
+      "./node_modules/@types" // Community types
     ]
   },
   "include": [
-    "src/**/*",
-    "test/**/*",
-    "mocks/**/*",
-    "wrappers/**/*"
+    "src/**/*",     // Source files
+    "test/**/*",    // Unit/integration tests
+    "mocks/**/*",   // Test mocks
+    "wrappers/**/*" // Wrappers/adapters
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "node_modules"  // Exclude dependencies
   ]
 }

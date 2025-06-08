@@ -6,8 +6,6 @@
 function main(workbook: ExcelScript.Workbook,
 ) {
 
-  console.log("main.ts executed!", workbook);
-
   // Parameters and constants definitions
   // ------------------------------------
   const MSG_CELL = "C2" // relative to the active sheet
@@ -31,6 +29,7 @@ function main(workbook: ExcelScript.Workbook,
     /*All functions need to be invoked using arrow function (=>).
     Test cases organized by topics. They don't have any dependency, so they can
     be executed in any order.*/
+  
     run.exec("Test Case ScriptError", () => TestCase.scriptError(), indent)
     run.exec("Test Case ConsoleAppender", () => TestCase.consoleAppender(), indent)
     run.exec("Test Case ExcelAppender", () => TestCase.excelAppender(workbook, MSG_CELL), indent)
@@ -40,12 +39,13 @@ function main(workbook: ExcelScript.Workbook,
     run.exec("Test Case Logger: Counters", () => TestCase.loggerCounters(), indent)
     run.exec("Test Case Logger: Export State", () => TestCase.loggerExportState(), indent)
     run.exec("Test Case Internal Errors", () => TestCase.loggerScriptError(workbook, MSG_CELL), indent)
-    run.exec("Test Case Logger toString", () => TestCase.loggerToString(), indent) // TODO Split
+    run.exec("Test Case Logger toString", () => TestCase.loggerToString(), indent)
+
 
     success = true
   } catch (e) {
     // TypeScript strict mode: 'e' is of type 'unknown', so we must check its type before property access
-    let info
+    let info:string
     if (e instanceof Error) {
       info = `[${e.name}]: ${e.message}` // Since ScriptError overrided toString method
     } else {
@@ -194,16 +194,15 @@ class TestCase {
     Assert.equals(actual, expected, "ConsoleAppender(toString)")
 
     // Testing throwing a ScriptError
-    /*
+  
     appender = ConsoleAppender.getInstance()
     expected = "The value '-1' was not defined in the LOG_EVENT enum."
     Assert.throws(
-      () => appender.log("Info event message", -1),
+      () => appender.log("Info event message", -1 as LOG_EVENT),
       ScriptError,
       expected,
       "ConsoleAppender(ScriptError)-log - non valid LOG_EVENT"
     )
-    */
 
     // Testing not instantiated singleton
     ConsoleAppender.clearInstance()
@@ -229,9 +228,8 @@ class TestCase {
     TestCase.clearAllSingleton()
     const activeSheet = workbook.getActiveWorksheet()
     const msgCellRng = activeSheet.getRange(msgCell)
-    const address = activeSheet.getRange(msgCell).getAddress()
+    const address = msgCellRng.getAddress()
     let appender: ExcelAppender = ExcelAppender.getInstance(msgCellRng)
-
     // Testing sending log events using directly the appender
     const MSG = "Info event in ExcelConsole"
     appender.log(MSG, LOG_EVENT.INFO)
@@ -240,63 +238,58 @@ class TestCase {
     Assert.equals(actual, expected, "ExcelAppender(cell value)")
     actual = appender.getLastMsg()
     Assert.equals(actual, expected, "ExcelAppender(getLastMsg())")
-
-    // Script Error
-    appender = ExcelAppender.getInstance(msgCellRng)
+    // Script Errors
     ExcelAppender.clearInstance() // singleton is undefined
     expected = "In 'ExcelAppender' class a singleton instance can't be undefined or null. Please invoke getInstance first"
     Assert.throws(
-      () => (appender as ExcelAppender).getLastMsg(),
+      () => appender.getLastMsg(),
       ScriptError,
-      `${expected}`,
+      expected,
       "ExcelAppender(ScriptError)-getLastMsg"
     )
     Assert.throws(
-      () => (appender as ExcelAppender).log("Info message", LOG_EVENT.INFO),
+      () => appender.log("Info message", LOG_EVENT.INFO),
       ScriptError,
       `${expected}`,
       "ExcelAppender(ScriptError)-log"
     )
-
     //    Testing non valid input
-    expected = "ExcelAppender requires a valid ExcelScript.Range for input argument msgCellRng."
-    /*
+     expected = "ExcelAppender requires a valid ExcelScript.Range for input argument msgCellRng."
     Assert.throws(
       () => ExcelAppender.getInstance(null),
       ScriptError,
       expected,
       "ExelAppender(ScriptError)-getInstance(Non valid msgCellRng-null)"
     )
-
     Assert.throws(
       () => ExcelAppender.getInstance(undefined),
       ScriptError,
       expected,
       "ExelAppender(ScriptError))-getInstance - Non valid msgCellRng-undefined"
     )
-    */
-    /*
     appender = ExcelAppender.getInstance(activeSheet.getRange(msgCell))
     expected = "The value '-1' was not defined in the LOG_EVENT enum."
     Assert.throws(
-      () => appender.log("Info event message", -1),
+      () => appender.log("Info event message", -1 as LOG_EVENT),
       ScriptError,
       expected,
       "ExcelAppender(ScriptError)-Log non valid LOG_EVENT"
     )
-    */
     ExcelAppender.clearInstance()
-    const arrayRng = activeSheet.getRange("C2:C3")
+    /*Mock object for ExcelScript.Range to simulate a multi-cell range in VS/TypeScript tests.
+    This enables testing single-cell validation logic in environments where the real API isn't available.
+    (Office Scripts allows any range; in VS strict typing and missing API require this manual mock.)*/
+    const mockArrRng = { getCellCount: () => 2, setValue: () => {} }
     expected = "ExcelAppender requires input argument msgCellRng represents a single Excel cell."
     Assert.throws(
-      () => ExcelAppender.getInstance(arrayRng),
+      () => ExcelAppender.getInstance(mockArrRng as unknown as ExcelScript.Range),
       ScriptError,
       expected,
       "ExcelAppender(ScriptError)-getInstance not a single cell"
     )
 
     //    Testing valid hexadecimal coloros
-    /*
+    ExcelAppender.clearInstance()
     expected = "The input value 'null' color for 'error' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, null),
@@ -304,7 +297,6 @@ class TestCase {
       expected,
       "ExcelAppender(ScriptError)-getInstance-Non valid font color for error"
     )
-    */
     expected = "The input value '' color for 'warning' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, "000000", ""),
@@ -669,7 +661,7 @@ class TestCase {
       "loggerScriptError(addAppenders()-undefined)"
     )
     // Adding appenders via setAppenders
-    /*
+  
     expectedMsg = "Invalid input: 'appenders' must be a non-null array."
     Assert.throws(
       () => logger.setAppenders(undefined),
@@ -683,6 +675,7 @@ class TestCase {
       expectedMsg,
       "loggerScriptError(setAppenders)-null"
     )
+  
     expectedMsg = "Appender list contains null or undefined entry."
     Assert.throws(
       () => logger.setAppenders([consoleAppender, null]),
@@ -696,7 +689,6 @@ class TestCase {
       expectedMsg,
       "loggerScriptError-[consoleAppender,undefined]"
     )
-    */
     expectedMsg = "Only one appender of type ConsoleAppender is allowed."
     Assert.throws(
       () => logger.setAppenders([consoleAppender, consoleAppender]),
@@ -731,6 +723,10 @@ class TestCase {
   }
 
 }
+
+// ----------------------------------------
+// End Testing the Logging framework
+// ----------------------------------------
 
 // Make main available globally for Node/ts-node test environments
 if (typeof globalThis !== "undefined" && typeof main !== "undefined") {
