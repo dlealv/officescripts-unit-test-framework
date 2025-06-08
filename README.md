@@ -1,150 +1,132 @@
-# Office Scripts Logging Framework
+# Office Scripts Logger User Guide
 
-A lightweight, extensible logging framework designed for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/overview/excel).  
-This library enables structured logging in Excel online automations, with TypeScript-first design and compatibility for both Office Scripts and local Node.js testing environments.
+A lightweight, extensible logging utility for [Office Scripts](https://learn.microsoft.com/office/dev/scripts/).  
+Easily add trace, debug, info, warning, and error logs to your Excel scripts.
 
 ---
 
 ## Features
 
-- **Structured Logging:** Easily add trace, debug, info, warning, and error logs to your Office Scripts.
-- **TypeScript Support:** Written in TypeScript for safety and IntelliSense.
-- **Office Scripts Compatibility:** Works seamlessly in Excel online automations.
-- **Pluggable Outputs:** Designed for easy extension (e.g., log to worksheet, console, etc.).
-- **Testable Locally:** Includes mocks for Office Scripts APIs for local/unit testing in Node.js.
-- **Minimal Dependencies:** Lightweight and simple to integrate.
+- Multiple log levels: trace, debug, info, warn, error, success
+- Lightweight and easy to integrate with Office Scripts
+- Simple API for adding logs anywhere in your script
+- Output logs to the Excel workbook or custom targets
 
 ---
 
 ## Getting Started
 
-### 1. Installation
+### 1. Installing / Adding to Your Script
 
-Clone the repository and install dependencies:
+**Option A: Copy Source Code**
 
-```sh
-git clone <your-repo-url>
-cd <your-repo-folder>
-npm ci
-```
+Copy `Logger.ts` (or the main logger file) from `src/` into the Office Scripts editor in Excel online.
 
-### 2. Usage in Office Scripts
+**Option B: Use the Built JavaScript**
 
-Copy the `src/` files or your built JavaScript into the Office Scripts editor in Excel online.
+If you use a bundler/transpiler, paste the output code into the Office Scripts editor.
 
-**Basic Example:**
+---
+
+### 2. Basic Usage Example
 
 ```typescript
-// Import or copy Logger from src/
-const logger = new Logger("MyScript");
-logger.info("Script started.");
+// If you copied Logger.ts, instantiate the logger
+const logger = new Logger("MyOfficeScript");
 
-// ...your automation logic...
+function main(workbook: ExcelScript.Workbook) {
+  logger.info("Script started.");
 
-logger.success("Script completed successfully.");
-```
-
-See [docs/office-scripts.md](docs/office-scripts.md) for more on integrating with Office Scripts.
-
----
-
-## API Overview
-
-| Method              | Description                                  |
-|---------------------|----------------------------------------------|
-| `logger.trace(msg)` | Trace-level log                              |
-| `logger.debug(msg)` | Debug-level log                              |
-| `logger.info(msg)`  | Info-level log                               |
-| `logger.warn(msg)`  | Warning-level log                            |
-| `logger.error(msg)` | Error-level log                              |
-| `logger.success(msg)` | Success indicator (if implemented)         |
-
-See the code in `src/Logger.ts` for further details and customization options.
-
----
-
-## Advanced Usage & Extensibility
-
-- **Custom Log Handlers:**  
-  Implement your own output targets (e.g., log to worksheet, send to API) by extending the logger or configuring handlers.
-
-- **Configuration:**  
-  Set log levels, formats, or targets as needed.
-
-- **TypeScript Typings:**  
-  The library is fully typed and compatible with the Office Scripts type system.
-
-See [docs/usage-examples.md](docs/usage-examples.md) and [docs/office-scripts.md](docs/office-scripts.md) for more.
-
----
-
-## Testing
-
-This project supports full local unit testing using mocks for the Office Scripts API.
-
-### Run All Tests
-
-```sh
-npm run build
-npm test
-```
-
-- The main test entry point is `wrappers/mainWrapper.ts`.
-- Mocks for ExcelScript are in `mocks/excelscript.mock.ts`.
-- Tests are defined in `test/main.ts` and related files.
-
-See [docs/testing.md](docs/testing.md) for full details on the testing setup.
-
----
-
-## Project Structure
-
-```
-src/                  # Logging framework source code
-test/                 # Unit tests (entry: test/main.ts)
-wrappers/mainWrapper.ts # Test runner using ExcelScript mocks
-mocks/excelscript.mock.ts # Mock implementation for testing
-office-scripts.d.ts   # Type definitions for Office Scripts
-.github/workflows/    # CI configuration
-docs/                 # Supporting documentation
+  // Your script logic
+  try {
+    // ... do work
+    logger.debug("Doing some work...");
+    // Simulate action
+    logger.success("Work completed successfully!");
+  } catch (e) {
+    logger.error(`An error occurred: ${e}`);
+  }
+}
 ```
 
 ---
 
-## Contributing
+### 3. Log Levels
 
-Contributions are welcome!
+- `logger.trace(message)`
+- `logger.debug(message)`
+- `logger.info(message)`
+- `logger.warn(message)`
+- `logger.error(message)`
+- `logger.success(message)`
 
-- Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-- For major changes, open an issue to discuss your proposal.
-
----
-
-## CI/CD
-
-Automated testing and builds run on each push and pull request to `main` via GitHub Actions.  
-The workflow checks that TypeScript builds and all tests pass before allowing merging.  
-See [docs/ci.md](docs/ci.md) for details.
+Each method will add a log entry at the specified level.
 
 ---
 
-## Further Documentation
+### 4. Outputting Logs
 
-- [Developer Guide](docs/DEVELOPER_GUIDE.md)
-- [Testing Guide](docs/testing.md)
-- [CI/CD Pipeline](docs/ci.md)
-- [Office Scripts Integration](docs/office-scripts.md)
-- [Usage Examples](docs/usage-examples.md)
-- [Changelog](CHANGELOG.md)
+**Default:**  
+- Logs are stored in memory (or as designed in your Logger).
+- Extend the Logger to output to a worksheet, named range, or elsewhere as needed.
+
+**Example: Output logs to a worksheet**
+
+```typescript
+// After your script runs, write logs to a worksheet
+function main(workbook: ExcelScript.Workbook) {
+  const logger = new Logger("MyOfficeScript");
+
+  logger.info("Started");
+
+  // ... your code
+
+  // At the end, output logs
+  const sheet = workbook.addWorksheet("Logs");
+  sheet.getRange("A1").setValues([["Level", "Message"]]);
+  let row = 2;
+  for (const entry of logger.getLogs()) {
+    sheet.getCell(row - 1, 0).setValue(entry.level);
+    sheet.getCell(row - 1, 1).setValue(entry.message);
+    row++;
+  }
+}
+```
+*(Adjust the API if your Logger has a different log retrieval/output method.)*
+
+---
+
+### 5. Customization
+
+- **Log format:** You can extend or modify the Logger to change timestamp format, add author/script name, etc.
+- **Custom outputs:** Implement methods to send logs to URLs, custom sheets, etc.
+
+---
+
+### 6. Office Scripts Compatibility Notes
+
+- Only use APIs available in the [Office Scripts documentation](https://learn.microsoft.com/office/dev/scripts/).
+- Do not use Node.js or browser-specific APIs.
+
+---
+
+## Frequently Asked Questions
+
+**Q: Can I use this logger in VBA/macros or desktop Excel?**  
+A: No, it is designed for Office Scripts in Excel Online.
+
+**Q: Does it work for Google Sheets App Scripts?**  
+A: No, but you could adapt the code for that platform.
+
+**Q: How do I test my script locally?**  
+A: See [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) for developer setup and testing info.
 
 ---
 
 ## License
 
-[MIT](LICENSE)
+MIT
 
 ---
 
-## Support
-
-For questions or issues, please open an issue in this repository.
+*For developer setup, contributing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).*
