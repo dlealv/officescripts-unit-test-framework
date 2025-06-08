@@ -9,15 +9,28 @@ It is developed in TypeScript to ensure code can run both in the Office Scripts 
 
 ## Project Structure
 
-- **`src/`** – Logger source code and framework utilities.
+- **`src/`** – Logger source code and framework utilities (production code).
 - **`test/`** – Unit tests (entry point: `test/main.ts`).
 - **`wrappers/mainWrapper.ts`** – Bootstraps tests using ExcelScript mocks.
 - **`mocks/excelscript.mock.ts`** – Local mock implementation of the ExcelScript API.
-- **`office-scripts.d.ts`** – Type definitions to enable TS IntelliSense and type safety.
+- **`office-scripts.d.ts`** – Type definitions to enable TS IntelliSense and type safety for Office Scripts.
+- **`dist/`** – Production-ready TypeScript source, with test-only code stripped.
 - **`package.json`** – Project metadata, scripts, dependencies.
+- **`tsconfig.json`** – TypeScript configuration for production build.
+- **`tsconfig.test.json`** – TypeScript configuration for local testing. Local tests are executed in a Node.js TypeScript environment using mocks and wrappers that simulate the Office Scripts API. You do not need Excel or Office Online for local testing—just `run npm test` in your terminal
 - **`.github/workflows/ci.yml`** – GitHub Actions workflow for Continuous Integration.
 
----
+## TypeScript Configuration
+
+### Production Build (`tsconfig.json`)
+
+Configured to:
+- Use only files from `src/`
+- Output to `dist/`
+- Exclude test and build output files
+  
+**Note:**  
+> `office-scripts.d.ts` is only required for local development and type-checking. It is not needed in the production build configuration and is not included in the output.
 
 ## Development & Testing Workflow
 
