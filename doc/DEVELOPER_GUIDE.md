@@ -1,207 +1,183 @@
-# Office Scripts Logging Framework – User Guide
+# Office Scripts Logging Framework – Development & Testing Workflow
 
-A lightweight, extensible logging framework for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/) (ExcelScript), inspired by frameworks like Log4j.  
-Add robust, structured logs to your Excel automations with control over log levels, appenders, and error handling.
+## Overview
 
----
-
-## Features
-
-- **Multiple Log Levels:** `ERROR`, `WARN`, `INFO`, `TRACE`, plus an `OFF` mode.
-- **Configurable Error Handling:** Continue or terminate the script on warnings/errors.
-- **Pluggable Appenders:** Output logs to the console or Excel cells, or build your own.
-- **Singleton & Lazy Initialization:** The logger and appenders are created only when first needed.
-- **TypeScript/Office Scripts Compatible:** Works in both Office Scripts and Node test environments.
+This project is a lightweight, extensible logging framework designed for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/overview/excel) (ExcelScript).  
+It is developed in TypeScript to ensure code can run both in the Office Scripts runtime and in local/unit testing scenarios using Node.js, with mock implementations for OfficeScript APIs.
 
 ---
 
-## Lazy Initialization: What You Need to Know
+## Project Structure
 
-- **Logger Singleton:**  
-  - You do **not** have to manually create the Logger instance before using it  
-  - If you call any logging method (e.g., `Logger.info("...")`) before calling `getInstance()`, the Logger will be **automatically created** with default settings (`WARN` level, `EXIT` action)
-- **Default ConsoleAppender:**  
-  - If you log a message and **no appender** has been added, a `ConsoleAppender` will be **automatically created and added**. This ensures logs are never lost, even if you forget to add an appender
-
-**Summary:**  
-You can start logging immediately, but for best results (and explicit configuration), initialize the Logger and add your desired appenders as shown below
-
----
-
-## Getting Started
-
-### 1. Add the Logger to Your Script
-
-Copy `src/logger.ts` into your Office Scripts project
-
-### 2. Initialize the Logger (Recommended)
-
-```typescript
-// Set verbosity level up to INFO events, and continue on error/warning
-Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
-Logger.addAppender(ConsoleAppender.getInstance()) // Add console appender
-```
-> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings and a console appender:
-> * `Logger` will be initialized with verbosity level up to warnings, and in case of error/warning, execution stops by throwing a `ScriptError`
-> * The default appender used will be the `ConsoleAppender`, which doesn't require any configuration input parameters
+- **`src/`** – Logger source code and framework utilities.
+- **`test/`** – Unit tests (entry point: `test/main.ts`).
+- **`wrappers/mainWrapper.ts`** – Bootstraps tests using ExcelScript mocks.
+- **`mocks/excelscript.mock.ts`** – Local mock implementation of the ExcelScript API.
+- **`office-scripts.d.ts`** – Type definitions to enable TS IntelliSense and type safety.
+- **`package.json`** – Project metadata, scripts, dependencies.
+- **`.github/workflows/ci.yml`** – GitHub Actions workflow for Continuous Integration.
 
 ---
 
-## Usage Examples
+## Development & Testing Workflow
 
-### Basic Logging
+### 1. **Initial Setup**
 
-```typescript
-Logger.info("Script started")
-Logger.warn("This might be a problem")
-Logger.error("A fatal error occurred")
-Logger.trace("Step-by-step details for debugging")
-```
-> Even if you haven’t explicitly initialized the Logger or added an appender, logging will still work (see Lazy Initialization above)
+```sh
+# 1. Clone your repository and open in VS Code
+git clone <your-repo-url>
+cd <your-repo-folder>
+code .
 
-### Logging to Excel Cell
+# 2. Initialize npm and TypeScript if starting from scratch
+npm init -y
+npm install typescript ts-node --save-dev
+npx tsc --init
 
-```typescript
-function main(workbook: ExcelScript.Workbook) {
-  // Set up logger to send logs to cell B1
-  const cell = workbook.getActiveWorksheet().getRange("B1")
-  Logger.clearInstance() // (optional, if rerunning this script multiple times)
-  Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
-  Logger.addAppender(ExcelAppender.getInstance(cell))
+# 3. Install dependencies (adjust as needed for your project)
+npm install acorn acorn-walk arg create-require diff make-error undici-types v8-compile-cache-lib yn
 
-  Logger.info("Log written to Excel!")
-  Logger.warn("This warning appears in cell B1.")
-}
+# 4. (Optional) Install linting tools
+npm install eslint --save-dev
+npx eslint --init
 ```
 
 ---
 
-## Configuration
+### 2. **Build & Test Locally**
 
-### Log Levels
+| **Task**         | **Command**                                 |
+|------------------|---------------------------------------------|
+| Build project    | `npm run build`                             |
+| Run tests        | `npm test`                                  |
+| Lint (optional)  | `npm run lint` (if configured)              |
 
-Set the **minimum severity** of messages to be logged:
-
-- `Logger.LEVEL.OFF`: No logs
-- `Logger.LEVEL.ERROR`: Only errors
-- `Logger.LEVEL.WARN`: Errors and warnings (default)
-- `Logger.LEVEL.INFO`: Errors, warnings, and info
-- `Logger.LEVEL.TRACE`: All messages (most verbose)
-
-### Error Handling Action
-
-- `Logger.ACTION.CONTINUE`: Log the event, continue script execution
-- `Logger.ACTION.EXIT`: Log the event and throw a `ScriptError`, terminating the script (default)
-  > The configuration above only applies for log events sent to the appenders. If the level is `Logger.LEVEL.OFF`, no log events will be sent to any appender
-
-### Appenders
-
-- `ConsoleAppender`: Output to the Office Scripts console  
-  `Logger.addAppender(ConsoleAppender.getInstance())`
-- `ExcelAppender`: Output to a specified Excel cell, with color coding  
-  `Logger.addAppender(ExcelAppender.getInstance(cellRange))`
+**How it works:**  
+- `npm run build` runs the TypeScript compiler via the `"build": "tsc"` script.
+- `npm test` runs tests via `"test": "ts-node wrappers/mainWrapper.ts"`, which executes all tests in `test/main.ts` using mock OfficeScript objects.
 
 ---
 
-## Advanced Usage
+### 3. **Code Management with Git**
 
-### Manage Appenders
-
-- Add: `Logger.addAppender(appender)`
-- Remove: `Logger.removeAppender(appender)`
-- Replace all: `Logger.setAppenders([appender1, appender2])`
-- **Only one of each appender type is allowed; duplicates will throw an error**
-
-### Inspect Logger State
-
-- Get an array of all error/warning messages sent to the appenders: `logger.getMessages()`
-- Get error/warning counts: `logger.getErrCnt()`, `logger.getWarnCnt()`
-- Clear state (messages, counters, but not appenders): `logger.clear()`
-- Export state: `logger.exportState()`
-
-### Reset Logger
-
-- Use `Logger.clearInstance()` to reset the singleton and allow new configuration (useful in test loops or if your script reruns in the same session)
+| **Task**                  | **Command**                        |
+|---------------------------|------------------------------------|
+| Stage all changes         | `git add -A`                       |
+| Commit changes            | `git commit -m "your message"`     |
+| Push to remote            | `git push`                         |
+| Pull latest changes       | `git pull`                         |
 
 ---
 
-## API Reference
+### 4. **Continuous Integration (CI) with GitHub Actions**
 
-### Main Methods
+To ensure code always builds and tests pass before merging, add the following file:
 
-| Method                          | Description                                                            |
-|----------------------------------|------------------------------------------------------------------------|
-| `Logger.error(message: string)`  | Logs error event with a message, if `level >= LEVEL.ERROR`             |
-| `Logger.warn(message: string)`   | Logs warning with a message, if `level >= LEVEL.WARN`                  |
-| `Logger.info(message: string)`   | Logs info with a message, if `level >= LEVEL.INFO`                     |
-| `Logger.trace(message: string)`  | Logs trace/debug details with a message, if `level >= LEVEL.TRACE`     |
+```yaml name=.github/workflows/ci.yml
+name: CI
 
-### Static Properties
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-- `Logger.LEVEL`: Log levels (`OFF`, `ERROR`, `WARN`, `INFO`, `TRACE`)
-- `Logger.ACTION`: Error-handling actions (`CONTINUE`, `EXIT`)
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
 
----
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-## Complete Example
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-```typescript
-function main(workbook: ExcelScript.Workbook) {
-  // Reset logger and set up
-  Logger.clearInstance()
-  // Set verbosity up to TRACE and continue on error/warning
-  Logger.getInstance(Logger.LEVEL.TRACE, Logger.ACTION.CONTINUE)
+      - name: Install dependencies
+        run: npm ci
 
-  // Add appenders
-  Logger.addAppender(ConsoleAppender.getInstance())
-  const logCell = workbook.getActiveWorksheet().getRange("C2")
-  Logger.addAppender(ExcelAppender.getInstance(logCell))
+      - name: Build TypeScript
+        run: npm run build
 
-  // Logging
-  Logger.info("Script started.")
-  Logger.trace("This is a trace message.")
-  Logger.warn("This is a warning.")
-  Logger.error("This is an error!") // If ACTION.EXIT, this throws and aborts the script
-}
+      - name: Run tests
+        run: npm test
 ```
 
----
+**How CI works:**  
+- On pushes and pull requests to `main`, GitHub Actions will install dependencies, build your project, and run your tests.
+- If anything fails, the workflow fails and merging is blocked (if branch protection is enabled).
 
-## Troubleshooting & FAQ
-
-- **What if I call Logger methods before getInstance()?**  
-  Lazy initialization means logging always works, with default config and console output
-
-- **What happens if I don’t add an appender?**  
-  Logger auto-adds a `ConsoleAppender`
-
-- **Can I log to both console and Excel?**  
-  Yes, add both appenders
-
-- **How do I change log level or action after initialization?**  
-  Use `Logger.clearInstance()` and then call `getInstance()` with new options
-
-- **Why do I get a `ScriptError`?**  
-  If `Logger.ACTION.EXIT` is set and `Logger.LEVEL != LEVEL.OFF`, errors/warnings throw and abort the script
-
-- **Why can I only add one of each appender type?**  
-  To avoid duplicate logs on the same channel; each appender represents a unique output
-
-- **Why can't I send a different message to different appenders?**  
-  By design, all channels (appenders) receive the same log event message for consistency
+**Enforce this workflow:**  
+- Go to your GitHub repository → **Settings** → **Branches** → **Branch Protection Rules**.
+- Add a rule for `main` and check "Require status checks to pass before merging," selecting your "CI" workflow.
 
 ---
 
-## Additional Information
+## Notes on Office Scripts Compatibility
 
-For more detailed developer information, advanced usage patterns, customization, and testing instructions, refer to the [Developer Guide](docs/DEVELOPER_GUIDE.md).
-
----
-
-## License
-
-See [LICENSE](LICENSE) for details
+- All code in `src/` must use only APIs available in [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/).
+- The local test harness (`wrappers/mainWrapper.ts` and mocks) allows you to run and test code as if it were running in the real Office Scripts environment, but locally, using Node.js.
+- Avoid using Node.js or browser-specific APIs in your production (i.e., Office Scripts-targeted) code.
 
 ---
 
-*For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) if available*
+## Typical Development Flow
+
+1. **Edit source or test files** in VS Code.
+2. **Build and test locally** with:
+   ```sh
+   npm run build
+   npm test
+   ```
+3. **Stage, commit, and push:**
+   ```sh
+   git add -A
+   git commit -m "Describe your change"
+   git push
+   ```
+4. **Create a pull request** (PR).
+5. **CI will run build and test automatically.**
+6. **Merge only if checks pass.**
+
+---
+
+## Useful VS Code Terminal Commands
+
+| **Purpose**                | **Command**                                                    |
+|----------------------------|---------------------------------------------------------------|
+| Initialize npm project     | `npm init` or `npm init -y`                                   |
+| Install dependencies       | `npm install` or `npm ci`                                     |
+| Add a dependency           | `npm install <package>`                                       |
+| Add a dev dependency       | `npm install --save-dev <package>`                            |
+| Build TypeScript           | `npm run build`                                               |
+| Run tests                  | `npm test`                                                    |
+| Lint code (optional)       | `npm run lint` (if configured)                                |
+| Stage all changes          | `git add -A`                                                  |
+| Commit changes             | `git commit -m "your message"`                                |
+| Push to GitHub             | `git push`                                                    |
+| Pull from GitHub           | `git pull`                                                    |
+| Open VS Code               | `code .`                                                      |
+| Install TypeScript         | `npm install typescript --save-dev`                           |
+| Install ts-node            | `npm install ts-node --save-dev`                              |
+| Initialize tsconfig        | `npx tsc --init`                                              |
+
+---
+
+## Troubleshooting
+
+- If you encounter type or runtime errors, double-check your mocks and type declarations to ensure compatibility with the real Office Scripts API.
+- For new test files, import them in `test/main.ts` or ensure your test runner discovers them.
+
+---
+
+## Further Improvements
+
+- Add linting and/or code coverage tools for stricter code quality.
+- Enhance your mock OfficeScript API as needed for more advanced scenarios.
+- Keep your README updated as your workflow evolves!
+
+---
+
+**Happy scripting and testing!**
