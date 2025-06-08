@@ -11,3 +11,4 @@ const workbook = new ExcelScript.Workbook(["Log", "Sheet1"]);
 if (typeof main === "function") {
   main(workbook);
 }
+console.log("Hello from main-wrapper!");

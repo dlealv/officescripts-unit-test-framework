@@ -6,6 +6,8 @@
 function main(workbook: ExcelScript.Workbook,
 ) {
 
+  console.log("main.ts executed!", workbook);
+
   // Parameters and constants definitions
   // ------------------------------------
   const MSG_CELL = "C2" // relative to the active sheet
@@ -728,4 +730,10 @@ class TestCase {
     TestCase.clearAllSingleton()
   }
 
+}
+
+// Make main available globally for Node/ts-node test environments
+if (typeof globalThis !== "undefined" && typeof main !== "undefined") {
+  // @ts-ignore
+  globalThis.main = main;
 }

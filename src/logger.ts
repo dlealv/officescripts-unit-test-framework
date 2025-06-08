@@ -921,3 +921,27 @@ class Logger {
 // ===================================================
 // End Lightweight logging framework for Office Script
 // ===================================================
+
+// Make Logger and ConsoleAppender available globally for Node/ts-node test environments
+if (typeof globalThis !== "undefined") {
+  if (typeof Logger !== "undefined") {
+    // @ts-ignore
+    globalThis.Logger = Logger
+  }
+  if (typeof ConsoleAppender !== "undefined") {
+    // @ts-ignore
+    globalThis.ConsoleAppender = ConsoleAppender;
+  }
+  if (typeof ExcelAppender !== "undefined") {
+    // @ts-ignore
+    globalThis.ExcelAppender = ExcelAppender
+  }
+  if (typeof ScriptError !== "undefined") {
+    // @ts-ignore
+    globalThis.ScriptError = ScriptError
+  }
+  if (typeof LOG_EVENT !== "undefined") {
+    // @ts-ignore
+    globalThis.LOG_EVENT = LOG_EVENT
+  }
+}

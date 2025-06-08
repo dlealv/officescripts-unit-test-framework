@@ -1,3 +1,16 @@
+//****************************************************
+// Unit Testing Framework
+//****************************************************
+
+// ====================================================
+// Lightweight unit testing framework for Office Script
+// ====================================================
+
+/**
+ * Lightweight, extensible unit testing framework for Office Scripts, inspired by libraries like jUnit.
+ * It anable basic assertion and also defines how the test cases are executed.
+ * /
+
 /** Utility class for writing unit-test-style assertions.
  * Provides static methods to assert value equality and exception throwing.
  * If an assertion fails, an informative 'Error' is thrown.
@@ -241,5 +254,21 @@ class TestRunner {
     }
     fn()
     this.title(`${TestRunner.END} ${name}`, indent)
+  }
+}
+
+// ===========================================================
+// End of Lightweight unit testing framework for Office Script
+// ===========================================================
+
+// Make Logger and ConsoleAppender available globally for Node/ts-node test environments
+if (typeof globalThis !== "undefined") {
+  if (typeof TestRunner !== "undefined") {
+    // @ts-ignore
+    globalThis.TestRunner = TestRunner
+  }
+  if (typeof Assert !== "undefined") {
+    // @ts-ignore
+    globalThis.Assert = Assert
   }
 }
