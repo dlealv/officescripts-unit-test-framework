@@ -11,26 +11,27 @@
 // - All strict type checks except strictNullChecks are enabled for code quality.
 // - Side comments explain individual settings inline.
 {
+  // TypeScript configuration for production build
+  // Only generate .d.ts files for code in src/, no .js files or test/mocks/wrappers included
   "compilerOptions": {
-    "target": "es2016", // ECMAScript 2016 output
-    "module": "commonjs", // Node.js/CommonJS modules
-    "rootDir": ".", // Use project root as source root
-    "esModuleInterop": true, // Enable default import compatibility
-    "forceConsistentCasingInFileNames": true, // File name casing consistency
-    "strictNullChecks": false, // See rationale above
-    "strict": true, // Enable all other strict type-checking
-    "skipLibCheck": true, // Skip type-checking for .d.ts files
-    "typeRoots": [
-      "./node_modules/@types" // Community types
-    ]
+    "emitDeclarationOnly": true, // Only output .d.ts files, not .js
+    "declaration": true, // Generate type declaration files
+    "outDir": "dist", // Output directory for build artifacts
+    "rootDir": "src", // Specify the root directory of input files
+    "module": "commonjs", // Module system for output
+    "target": "es2019", // Set JS target (irrelevant here, but required)
+    "strict": true, // Enable all strict type-checking options
+    "strictNullChecks": false, // Enable strict null/undefined checks
+    "esModuleInterop": true // Enable compatibility for ES modules/CommonJS imports
   },
+  // Only include production code for builds
   "include": [
-    "src/**/*",     // Source files
-    "test/**/*",    // Unit/integration tests
-    "mocks/**/*",   // Test mocks
-    "wrappers/**/*" // Wrappers/adapters
+    "src/**/*", // Include only code from src/
+    "office-scripts.d.ts", // Include type definitions for Office Scripts
   ],
   "exclude": [
-    "node_modules"  // Exclude dependencies
-  ]
+    "test",
+    "mocks",
+    "wrappers"
+  ] // Exclude tests, mocks, and wrappers
 }

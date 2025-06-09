@@ -1,6 +1,6 @@
 {
   "name": "officescripts-logging-framework",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Lightweight, extensible logging framework for Office Scripts, inspired by libraries like Log4j. Enables structured logging via a singleton 'Logger', supporting multiple log levels ('Logger.LEVEL') and pluggable output targets through the 'Appender' interface",
   "main": "index.js",
   "directories": {
@@ -18,12 +18,16 @@
     "yn": "^3.1.1"
   },
   "devDependencies": {
+    "strip-code": "^1.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "build": "tsc",
-    "test": "ts-node wrappers/mainWrapper.ts"
+    "setup": "npm install && npx tsc --init",
+    "build": "npm run copy:ts && npm run strip:testonly",
+    "copy:ts": "mkdir -p dist && find src/ -name \"*.ts\" -exec cp --parents {} dist/ \\;",
+    "strip:testonly": "find dist/ -name \"*.ts\" -exec sed -i '/#TEST-ONLY-START/,/#TEST-ONLY-END/d' {} +",
+    "test": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts"
   },
   "keywords": [
     "office-scripts",

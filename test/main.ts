@@ -29,7 +29,6 @@ function main(workbook: ExcelScript.Workbook,
     /*All functions need to be invoked using arrow function (=>).
     Test cases organized by topics. They don't have any dependency, so they can
     be executed in any order.*/
-  
     run.exec("Test Case ScriptError", () => TestCase.scriptError(), indent)
     run.exec("Test Case ConsoleAppender", () => TestCase.consoleAppender(), indent)
     run.exec("Test Case ExcelAppender", () => TestCase.excelAppender(workbook, MSG_CELL), indent)
@@ -292,10 +291,10 @@ class TestCase {
     ExcelAppender.clearInstance()
     expected = "The input value 'null' color for 'error' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
-      () => ExcelAppender.getInstance(msgCellRng, null),
+      () => ExcelAppender.getInstance(msgCellRng, null as unknown as string), // don't use undefined, it is valid
       ScriptError,
       expected,
-      "ExcelAppender(ScriptError)-getInstance-Non valid font color for error"
+      "ExcelAppender(ScriptError)-getInstance-red color undefined"
     )
     expected = "The input value '' color for 'warning' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
@@ -664,13 +663,13 @@ class TestCase {
   
     expectedMsg = "Invalid input: 'appenders' must be a non-null array."
     Assert.throws(
-      () => logger.setAppenders(undefined),
+      () => logger.setAppenders(undefined as unknown as Appender[]),
       ScriptError,
       expectedMsg,
       `Internal Error(setAppenders)-undefined`
     )
     Assert.throws(
-      () => logger.setAppenders(null),
+      () => logger.setAppenders(null as unknown as Appender[]),
       ScriptError,
       expectedMsg,
       "loggerScriptError(setAppenders)-null"
@@ -678,13 +677,13 @@ class TestCase {
   
     expectedMsg = "Appender list contains null or undefined entry."
     Assert.throws(
-      () => logger.setAppenders([consoleAppender, null]),
+      () => logger.setAppenders([consoleAppender, null as unknown as Appender]),
       ScriptError,
       expectedMsg,
       "loggerScriptError-[consoleAppender,null]"
     )
     Assert.throws(
-      () => logger.setAppenders([consoleAppender, undefined]),
+      () => logger.setAppenders([consoleAppender, undefined as unknown as Appender]),
       ScriptError,
       expectedMsg,
       "loggerScriptError-[consoleAppender,undefined]"
