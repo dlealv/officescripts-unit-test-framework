@@ -213,6 +213,7 @@ function main(workbook: ExcelScript.Workbook) {
 ## Additional Information
 
 - For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) if available.
+- JSDOC documentation: [JSDOC](docs/logger/index.html)
 
 ## License
 

@@ -65,10 +65,12 @@ class Assert {
 
   /**
    * Asserts that two values are equal by type and value.
-   * Supports comparison of primitive types and one-dimensional arrays.
+   * Supports comparison of primitive types, one-dimensional arrays of primitives,
+   * and one-dimensional arrays of objects (shallow comparison via JSON.stringify).
    *
    * If the values differ, a detailed error is thrown.
    * For arrays, mismatches include index, value, and type.
+   * For arrays of objects, a shallow comparison using JSON.stringify is performed.
    *
    * @param actual - The actual value.
    * @param expected - The expected value.
@@ -79,7 +81,8 @@ class Assert {
    * ```ts
    * Assert.equals(2 + 2, 4, "Simple math")
    * Assert.equals(["a", "b"], ["a", "b"], "Array match")
-   * Assert.equala([1,2], ["1",2], "Array mismatch") // Expected to fail by type on element 0
+   * Assert.equals([{x:1}], [{x:1}], "Object array match") // Passes
+   * Assert.equals([{x:1}], [{x:2}], "Object array mismatch") // Fails
    * ```
    */
   public static equals<T>(actual: T, expected: T, message: string = ""): asserts actual is T {
@@ -101,12 +104,12 @@ class Assert {
     }
   }
 
-/**
- * Asserts that the given value is strictly 'null'.
- * @param value - The value to test.
- * @param message - Optional message to prefix in case of failure.
- * @throws Error if the value is not exactly 'null'.
- */
+  /**
+   * Asserts that the given value is strictly 'null'.
+   * @param value - The value to test.
+   * @param message - Optional message to prefix in case of failure.
+   * @throws Error if the value is not exactly 'null'.
+   */
   public static isNull(value: unknown, message: string = ""): asserts value is null {
     const MSG = message ? `${message}: ` : ""
     if (value !== null) {
@@ -128,14 +131,49 @@ class Assert {
   }
 
   /**
-   * Asserts that two one-dimensional arrays are equal by type and value.
-   * Designed for internal use only.
-   * @param a - Actual array.
-   * @param b - Expected array.
-   * @param message - (Optional) Prefix message for errors.
-   * @throws Error - If arrays differ in length, type, or value at any index.
-   * @private
+   * Asserts that a value is of the expected primitive type (e.g. "string", "number")
+   * or instance of a class/constructor (e.g. Date, Array, custom class).
+   * @param value - The value to check.
+   * @param typeOrConstructor - The expected type as a string (e.g. "string", "object") or a constructor function.
+   * @param message - Optional custom error message.
    */
+  static isType(
+    value: unknown,
+    typeOrConstructor: string | (new (...args: any[]) => any),
+    message?: string
+  ): void {
+    if (typeof typeOrConstructor === "string") {
+      // Primitive type check
+      if (typeof value !== typeOrConstructor) {
+        throw new Error(
+          message ||
+          `Expected type '${typeOrConstructor}', but got '${typeof value}'.`
+        )
+      }
+    } else if (typeof typeOrConstructor === "function") {
+      // Instance of constructor check
+      if (!(value instanceof typeOrConstructor)) {
+        const ctorName = typeOrConstructor.name || "unknown";
+        throw new Error(
+          message ||
+          `Expected value to be instance of '${ctorName}', but got '${value?.constructor?.name ?? typeof value}'.`
+        )
+      }
+    } else {
+      throw new Error("Invalid typeOrConstructor argument.")
+    }
+  }
+
+  /**
+ * Asserts that two one-dimensional arrays are equal by type and value.
+ * Supports arrays of primitives and arrays of objects (shallow comparison via JSON.stringify).
+ * Designed for internal use only.
+ * @param a - Actual array.
+ * @param b - Expected array.
+ * @param message - (Optional) Prefix message for errors.
+ * @throws Error - If arrays differ in length, type, or value at any index.
+ * @private
+ */
   private static arraysEqual<T>(a: T[], b: T[], message: string = ""): boolean {
     const MSG = message ? `${message}: ` : ""
 
@@ -151,6 +189,14 @@ class Assert {
 
       if (actualType !== expectedType) {
         throw new Error(`${MSG}Array type mismatch at index ${i}: actual (${actualValue} : ${actualType}) !== expected (${expectedValue} : ${expectedType})`)
+      }
+
+      // If comparing objects, use JSON.stringify for shallow deep equality
+      if (actualType === "object" && expectedType === "object" && actualValue !== null && expectedValue !== null) {
+        if (JSON.stringify(actualValue) !== JSON.stringify(expectedValue)) {
+          throw new Error(`${MSG}Array object value mismatch at index ${i}: actual (${JSON.stringify(actualValue)}) !== expected (${JSON.stringify(expectedValue)})`)
+        }
+        continue
       }
 
       if (actualValue !== expectedValue) {

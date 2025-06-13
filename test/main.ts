@@ -10,11 +10,11 @@ function main(workbook: ExcelScript.Workbook,
   // ------------------------------------
   const MSG_CELL = "C2" // relative to the active sheet
   //const VERBOSITY = TestRunner.VERBOSITY.OFF        // unmment the scenario of your preference
-  const VERBOSITY = TestRunner.VERBOSITY.HEADER
-  //const VERBOSITY = TestRunner.VERBOSITY.SECTION
+  //const VERBOSITY = TestRunner.VERBOSITY.HEADER
+  const VERBOSITY = TestRunner.VERBOSITY.SECTION
   const START_TEST = "START TEST"
   const END_TEST = "END TEST"
-  const SHOW_TRACE = false
+  const SHOW_TRACE = true
 
   let run: TestRunner = new TestRunner(VERBOSITY) // Controles the test execution process
   let success = false // Control variable to send the last message in finally
@@ -26,10 +26,27 @@ function main(workbook: ExcelScript.Workbook,
     const VERBOSITY_LEVEL = run.getVerbosityLabel()
     run.title(`${START_TEST} with verbosity '${VERBOSITY_LEVEL}'`, 1)
     let indent: number = 2 // Use the same indentation level for all test cases
+    // Setting a commong layout
+
     /*All functions need to be invoked using arrow function (=>).
     Test cases organized by topics. They don't have any dependency, so they can
     be executed in any order.*/
+
     run.exec("Test Case ScriptError", () => TestCase.scriptError(), indent)
+    run.exec("Test Case LayoutImpl", () => TestCase.testLayoutImpl(), indent)
+    run.exec("Test Case LogEventImpl", () => TestCase.testLogEventImpl(), indent)
+    run.exec("Test Case ConsoleAppender", () => TestCase.consoleAppender(), indent)
+    run.exec("Test Case ExcelAppender", () => TestCase.excelAppender(workbook, MSG_CELL), indent)
+    run.exec("Test Case Logger: Lazy Init", () => TestCase.loggerLazyInit(), indent)
+    run.exec("Test Case Reset Singleton", () => TestCase.loggerResetSingleton(workbook, MSG_CELL), indent)
+    run.exec("Test Case Logger: Level OFF", () => TestCase.loggerLevelOFF(), indent)
+    run.exec("Test Case Logger: Counters", () => TestCase.loggerCounters(), indent)
+    run.exec("Test Case Logger: Export State", () => TestCase.loggerExportState(), indent)
+    run.exec("Test Case Internal Errors", () => TestCase.loggerScriptError(workbook, MSG_CELL), indent)
+    /*
+    run.exec("Test Case ScriptError", () => TestCase.scriptError(), indent)
+    run.exec("Test Case LayoutImpl", () => TestCase.testLayoutImpl(), indent)
+    run.exec("Test Case LogEventImpl", () => TestCase.testLogEventImpl(), indent)
     run.exec("Test Case ConsoleAppender", () => TestCase.consoleAppender(), indent)
     run.exec("Test Case ExcelAppender", () => TestCase.excelAppender(workbook, MSG_CELL), indent)
     run.exec("Test Case Logger: Lazy Init", () => TestCase.loggerLazyInit(), indent)
@@ -39,7 +56,7 @@ function main(workbook: ExcelScript.Workbook,
     run.exec("Test Case Logger: Export State", () => TestCase.loggerExportState(), indent)
     run.exec("Test Case Internal Errors", () => TestCase.loggerScriptError(workbook, MSG_CELL), indent)
     run.exec("Test Case Logger toString", () => TestCase.loggerToString(), indent)
-
+    */
 
     success = true
   } catch (e) {
@@ -77,7 +94,7 @@ function main(workbook: ExcelScript.Workbook,
       }
     }
   } finally {
-    TestCase.clearAllSingleton() // safeguard
+    TestCase.clear() // safeguard
     run.title(success ? `${END_TEST}: OK` : `${END_TEST}: FAIL`, 1)
   }
 } // End of main
@@ -90,16 +107,52 @@ function main(workbook: ExcelScript.Workbook,
  */
 class TestCase {
 
-  public static clearAllSingleton(): void { // Clear all the instances
-    Logger.clearInstance()
+  public static clear(): void { // Clear all the instances
+    LoggerImpl.clearInstance()
     ConsoleAppender.clearInstance()
     ExcelAppender.clearInstance()
+    AbstractAppender.clearLayout() // Clear the layout
+  }
 
+  /** Removes the timestamp from a string. This is used to compare strings */
+  public static removeTimestamp(str: string): string { // Remove timestamp from a string
+    let timestampRegex = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}\] /
+    return str.replace(timestampRegex, '')
+  }
+
+  public static setShortLayout(): void { // Set the short layout for the logger
+    let layout = new LayoutImpl(LayoutImpl.shortFormatterFun)
+    AbstractAppender.setLayout(layout) // Set the layout for all appenders
+  }
+
+  public static setStandardLayout(): void { // Set the standard layout for the logger
+    let layout = new LayoutImpl()
+    AbstractAppender.setLayout(layout) // Set the layout for all appenders
+  }
+
+  /**
+   * Returns a new array with only the 'type' and 'message' properties
+   * from each LogEvent in the input array.
+   * @param logEvents Array of LogEvent objects
+   * @returns Array of objects containing only type and message
+   */
+  static simplifyLogEvents(
+    logEvents: LogEvent[]
+  ): { type: LOG_EVENT; message: string }[] {
+    return logEvents.map(event => ({
+      type: event.type,
+      message: event.message
+    }))
   }
 
   public static scriptError(): void { // Unit tests for the ScriptError class
+    TestCase.clear() // Clear all the instances
+
+    // Defining the variables to be used in the tests
+    let expected: string, actual: string, cause: Error, origin: ScriptError
+
     // Testing raising a ScriptError without cause
-    let expected = "Script Error message"
+    expected = "Script Error message"
     Assert.throws(
       () => { throw new ScriptError(expected) },
       ScriptError,
@@ -107,8 +160,8 @@ class TestCase {
       "scriptError(notcause)"
     )
     // Testing raising a ScriptError with cause
-    let cause = new TypeError("Type Error message")
-    let origin = new ScriptError(expected, cause)
+    cause = new TypeError("Type Error message")
+    origin = new ScriptError(expected, cause)
     expected = "Script Error message (caused by 'TypeError' with message 'Type Error message')"
     Assert.throws(
       () => { throw origin },
@@ -157,121 +210,198 @@ class TestCase {
 
   }
 
-  public static consoleAppender(): void { // Unit Tests for ConsoleAppender class
-    TestCase.clearAllSingleton()
-    // Test lazy initialization: We can't because we need and instance first
-    // if we invoke getLastMsg, it will throw a ScriptError.
+  public static testLayoutImpl(): void { // Unit tests for LayoutImpl class
+    TestCase.clear()
+    // Deffining the variables to be used in the tests
+    let layout:Layout, event:LogEvent, actualStr:string, expectedStr:string
 
-    // Testing getLastMsg()
-    let appender: Appender = ConsoleAppender.getInstance()
-    let expected = ""
-    let actual = appender.getLastMsg()
-    Assert.equals(actual, expected,
-      "ConsoleAppender(getLastMsg empty)")
-    expected = "[INFO] Info message"
-    appender.log("Info message", LOG_EVENT.INFO)
-    actual = appender.getLastMsg()
-    Assert.equals(actual, expected,
-      "ConsoleAppender(getLastMsg not empty)")
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // with short formatter
+    event = new LogEventImpl("Test message", LOG_EVENT.INFO)
+    actualStr = layout.format(event); // This should NOT error!
+    // Testing constructor
+    Assert.isNotNull(layout, "LayoutImpl(constructor-is not null)")
+    expectedStr = `[INFO] Test message`
+    Assert.equals(actualStr, expectedStr, "LayoutImpl(format-short layout)")
+    // Testing long layout
+    AbstractAppender.clearLayout()
+    layout = new LayoutImpl() // Default formatter with timestamp
+    actualStr = TestCase.removeTimestamp(layout.format(event))
+    Assert.equals(actualStr, expectedStr,"LayoutImpl(format-long layout)")
+    // Testing toString: TODO: add more tests
+
+    TestCase.clear()
+  }
+
+  public static testLogEventImpl(): void { // Unit tests for LogEventImpl class
+    TestCase.clear()
+    // Defining the variables to be used in the tests
+    let actualEvent:LogEvent, expectedMsg: string, actualMsg: string, expectedStr, actualStr: string, 
+      actualType: LOG_EVENT, actualtimeStamp: Date, layout: Layout
+
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
+    // Testing constructor
+    expectedMsg = "Test message"
+    actualEvent = new LogEventImpl(expectedMsg, LOG_EVENT.INFO)
+    Assert.isNotNull(actualEvent, "LogEventImpl(constructor-is not null)")
+    // Testing properties
+    actualMsg = (actualEvent as LogEvent).message
+    actualType = (actualEvent as LogEvent).type
+    actualtimeStamp = (actualEvent as LogEvent).timestamp
+    Assert.isNotNull(actualtimeStamp, "LogEventImpl(get timestamp) is not null")
+    Assert.isType(actualtimeStamp, Date, "LogEventImpl(get timestamp) is Date")
+    Assert.equals(actualType, LOG_EVENT.INFO, "LogEventImpl(get type())")
+    Assert.equals(actualMsg, expectedMsg, "LogEventImpl(get message())")
+    // Testing toString
+    expectedStr = `[${LOG_EVENT[actualType]}] ${expectedMsg}`
+    actualStr = TestCase.removeTimestamp((actualEvent as LogEvent).toString())
+    Assert.equals(actualStr, expectedStr, "LogEventImpl(toString())")
+
+    TestCase.clear()
+  }
+
+  public static consoleAppender(): void { // Unit Tests for ConsoleAppender class
+    TestCase.clear()
+    TestCase.setShortLayout()
+
+    // Defining the variables to be used in the tests
+    let expectedStr: string, actualStr: string, expectedEvent: LogEvent,
+      actualEvent: LogEvent|null, appender: Appender, layout:Layout, expectedNull: LogEvent|null,
+      actualMsg: string, expectedMsg: string, msg: string
+
+    // Test lazy initialization: We can't because we need and instance first
+
+    // Testing log(LogEvent)
+    expectedMsg = "Info Message"
+    appender = ConsoleAppender.getInstance()
+    expectedEvent = new LogEventImpl(expectedMsg,LOG_EVENT.INFO)
+    appender.log(expectedEvent)
+    actualEvent = appender.getLastLogEvent()
+    Assert.equals(actualEvent?.type, expectedEvent?.type,
+      "ConsoleAppender(getLastMsg not empty)-log(LogEvent).type")
+    Assert.equals(actualEvent?.message, expectedEvent?.message,
+      "ConsoleAppender(getLastMsg not empty)-log(LogEvent).message")
+
+    // Testing log(string, LOG_EVENT)
+    expectedMsg = "Trace Message"
+    expectedEvent = new LogEventImpl(expectedMsg,LOG_EVENT.TRACE)
+    appender.log(expectedMsg, LOG_EVENT.TRACE)
+    actualEvent = appender.getLastLogEvent()
+    Assert.equals(actualEvent?.type, expectedEvent?.type,
+      "ConsoleAppender(getLastMsg not empty)-log(string,LOG_EVENT).type")
+    Assert.equals(actualEvent?.message, expectedEvent?.message,
+      "ConsoleAppender(getLastMsg not empty)-log(string,LOG_EVENT).message")
 
     // Now testing after clearing the instance the last message is empty again
     ConsoleAppender.clearInstance()
-    expected = ""
     appender = ConsoleAppender.getInstance()
-    actual = appender.getLastMsg()
-    Assert.equals(actual, expected,
+    expectedNull = null
+    actualEvent = appender.getLastLogEvent()
+    Assert.equals(actualEvent, expectedNull,
       "ConsoleAppender(getLastMsg empty after clear the instance)")
 
     // Testing to String
     ConsoleAppender.clearInstance()
-    const MSG = "error message in appendersToString"
+    msg = "error message in appendersToString"
     ConsoleAppender.clearInstance()
     ConsoleAppender.getInstance()
-    appender.log(MSG, LOG_EVENT.ERROR)
-    expected = `ConsoleAppender: {Last event message: '[ERROR] ${MSG}'}`
-    actual = appender.toString()
-    Assert.equals(actual, expected, "ConsoleAppender(toString)")
+    actualEvent = new LogEventImpl(msg, LOG_EVENT.ERROR)
+    appender.log(actualEvent)
+    msg = AbstractAppender.getLayout().format(actualEvent as LogEvent)
+    expectedStr = `ConsoleAppender: {Last log event: '${msg}'}`
+    actualStr = appender.toString()
+    Assert.equals(actualStr,expectedStr, "ConsoleAppender(toString)")
 
     // Testing throwing a ScriptError
-  
+    ConsoleAppender.clearInstance()
     appender = ConsoleAppender.getInstance()
-    expected = "The value '-1' was not defined in the LOG_EVENT enum."
+    expectedStr = "[LogEventImpl.constructor]: LogEvent.type='-1' property is not defined in the LOG_EVENT enum."
     Assert.throws(
       () => appender.log("Info event message", -1 as LOG_EVENT),
       ScriptError,
-      expected,
+      expectedStr,
       "ConsoleAppender(ScriptError)-log - non valid LOG_EVENT"
     )
 
     // Testing not instantiated singleton
+    expectedStr = "In 'ConsoleAppender' class a singleton instance can't be undefined or null. Please invoke getInstance first"
     ConsoleAppender.clearInstance()
-    expected = "In 'ConsoleAppender' class a singleton instance can't be undefined or null. Please invoke getInstance first"
-    Assert.throws(
-      () => appender.getLastMsg(),
-      ScriptError,
-      expected,
-      "ConsoleAppender(ScriptError)-getLastMsg-singleton not instantiated"
-    )
     Assert.throws(
       () => appender.toString(),
       ScriptError,
-      expected,
+      expectedStr,
       "ConsoleAppender(ScriptError)-toString-with singleton not instantiated"
     )
 
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
   // Unit Tests for ExcelAppener claass
   public static excelAppender(workbook: ExcelScript.Workbook, msgCell: string): void {
-    TestCase.clearAllSingleton()
-    const activeSheet = workbook.getActiveWorksheet()
-    const msgCellRng = activeSheet.getRange(msgCell)
+    TestCase.clear()
+    TestCase.setShortLayout()
+   
+    // Defining the variables to be used in the tests
+    let expectedStr: string, actualStr: string, msg:string, expectedEvent: LogEvent,
+      actualEvent: LogEvent|null, appender: Appender, msgCellRng: ExcelScript.Range,
+      activeSheet: ExcelScript.Worksheet
+
+    activeSheet = workbook.getActiveWorksheet()
+    msgCellRng = activeSheet.getRange(msgCell)
     const address = msgCellRng.getAddress()
-    let appender: ExcelAppender = ExcelAppender.getInstance(msgCellRng)
-    // Testing sending log events using directly the appender
-    const MSG = "Info event in ExcelConsole"
-    appender.log(MSG, LOG_EVENT.INFO)
-    let actual = msgCellRng.getValue().toString()
-    let expected = `[INFO] ${MSG}`
-    Assert.equals(actual, expected, "ExcelAppender(cell value)")
-    actual = appender.getLastMsg()
-    Assert.equals(actual, expected, "ExcelAppender(getLastMsg())")
+    appender = ExcelAppender.getInstance(msgCellRng)
+
+    // Testing sending log(string, LOG_EVENT)
+    msg = "Info event in ExcelConsole"
+    appender.log(msg, LOG_EVENT.INFO)
+    actualStr = msgCellRng.getValue().toString()
+    expectedEvent =  new LogEventImpl(msg, LOG_EVENT.INFO)
+    expectedStr = AbstractAppender.getLayout().format(expectedEvent as LogEvent)
+    Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value via log(string,LOG_EVENT))")
+
+    // Testing log(LogEvent)
+    appender.log(expectedEvent)
+    actualStr = msgCellRng.getValue().toString()
+    expectedEvent =  new LogEventImpl(msg, LOG_EVENT.INFO)
+    expectedStr = AbstractAppender.getLayout().format(expectedEvent as LogEvent)
+    Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value) via log(LogEvent)")
+   
+    // Testing the corresponding last log event
+    actualEvent = appender.getLastLogEvent()
+    Assert.isNotNull(actualEvent, "ExcelAppender(getLastEvent) not null")
+    Assert.equals(actualEvent!.type, expectedEvent.type,
+      "ExcelAppender(getLastEvent).type")
+    Assert.equals(actualEvent!.message, expectedEvent.message,
+      "ExcelAppender(getLastEvent).message")
+      
     // Script Errors
     ExcelAppender.clearInstance() // singleton is undefined
-    expected = "In 'ExcelAppender' class a singleton instance can't be undefined or null. Please invoke getInstance first"
-    Assert.throws(
-      () => appender.getLastMsg(),
-      ScriptError,
-      expected,
-      "ExcelAppender(ScriptError)-getLastMsg"
-    )
+    expectedStr = "In 'ExcelAppender' class a singleton instance can't be undefined or null. Please invoke getInstance first"
     Assert.throws(
       () => appender.log("Info message", LOG_EVENT.INFO),
       ScriptError,
-      `${expected}`,
+      expectedStr,
       "ExcelAppender(ScriptError)-log"
     )
     //    Testing non valid input
-     expected = "ExcelAppender requires a valid ExcelScript.Range for input argument msgCellRng."
+     expectedStr = "ExcelAppender requires a valid ExcelScript.Range for input argument msgCellRng."
     Assert.throws(
       () => ExcelAppender.getInstance(null),
       ScriptError,
-      expected,
+      expectedStr,
       "ExelAppender(ScriptError)-getInstance(Non valid msgCellRng-null)"
     )
     Assert.throws(
       () => ExcelAppender.getInstance(undefined),
       ScriptError,
-      expected,
+      expectedStr,
       "ExelAppender(ScriptError))-getInstance - Non valid msgCellRng-undefined"
     )
     appender = ExcelAppender.getInstance(activeSheet.getRange(msgCell))
-    expected = "The value '-1' was not defined in the LOG_EVENT enum."
+    expectedStr = "[LogEventImpl.constructor]: LogEvent.type='-1' property is not defined in the LOG_EVENT enum."
     Assert.throws(
       () => appender.log("Info event message", -1 as LOG_EVENT),
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError)-Log non valid LOG_EVENT"
     )
     ExcelAppender.clearInstance()
@@ -279,80 +409,91 @@ class TestCase {
     This enables testing single-cell validation logic in environments where the real API isn't available.
     (Office Scripts allows any range; in VS strict typing and missing API require this manual mock.)*/
     const mockArrRng = { getCellCount: () => 2, setValue: () => {} }
-    expected = "ExcelAppender requires input argument msgCellRng represents a single Excel cell."
+    expectedStr = "ExcelAppender requires input argument msgCellRng represents a single Excel cell."
     Assert.throws(
       () => ExcelAppender.getInstance(mockArrRng as unknown as ExcelScript.Range),
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError)-getInstance not a single cell"
     )
 
     //    Testing valid hexadecimal coloros
     ExcelAppender.clearInstance()
-    expected = "The input value 'null' color for 'error' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
+    expectedStr = "The input value 'null' color for 'error' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, null as unknown as string), // don't use undefined, it is valid
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError)-getInstance-red color undefined"
     )
-    expected = "The input value '' color for 'warning' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
+    expectedStr = "The input value '' color for 'warning' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, "000000", ""),
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError)-getInstance-Non valid font color for warning"
     )
-    expected = "The input value 'xxxxxx' color for 'info' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
+    expectedStr = "The input value 'xxxxxx' color for 'info' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, "000000", "000000", "xxxxxx"),
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError) - getInstance - Non valid font color for info"
     )
-    expected = "The input value '******' color for 'trace' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
+    expectedStr = "The input value '******' color for 'trace' event is not a valid hexadecimal color. Please enter a value that matches the following regular expression: '/^#?[0-9A-Fa-f]{6}$/'"
     Assert.throws(
       () => ExcelAppender.getInstance(msgCellRng, "000000", "000000", "000000", "******"),
       ScriptError,
-      expected,
+      expectedStr,
       "ExcelAppender(ScriptError)-getInstance-Non valid font color for trace"
     )
 
     // Testing toString
     ExcelAppender.clearInstance()
     appender = ExcelAppender.getInstance(activeSheet.getRange(msgCell))
-    appender.log(MSG, LOG_EVENT.ERROR)
-    expected = `ExcelAppender: {Message Range: "${address}", Error Font: "9c0006", Warning Font: "ed7d31", Info Font: "548235", Trace Font: "7f7f7f", Last event message: "[ERROR] ${MSG}"}`
-    actual = (appender as ExcelAppender).toString()
-    Assert.equals(actual, expected, "ExcelAppender(toString)")
+    msg = "Trace message in ExcelAppender toString"
+    appender.log(msg, LOG_EVENT.TRACE)
+    expectedStr = `ExcelAppender: {Message Range: "${address}", Event fonts: {errFont,9c0006,warnFont,ed7d31,infoFont,548235,traceFont,7f7f7f}, Last log event: "[TRACE] ${msg}"}`
+    actualStr = (appender as ExcelAppender).toString()
+    Assert.equals(actualStr, expectedStr, "ExcelAppender(toString)")
 
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
   public static loggerLazyInit() { // Unit Tests on Lazy Initialization for Logger class (instance and appender)
-    TestCase.clearAllSingleton()
+    TestCase.clear()
+    TestCase.setShortLayout()
 
+    // Defining the variables to be used in the tests
+    let layout: Layout, msg1: string, msg2: string, expectedEvent: LogEvent, logger: Logger, 
+      expectedNum: number, actualNum: number
+
+    // Testing lazy initialization of the LoggerImpl singleton
+    msg1 = "Info event, in lazyInit"
+    msg2 = "Error event, in lazyInit"
     // No appender was defined
-    let logger = Logger.getInstance(Logger.LEVEL.INFO)
-    const MSG1 = "Info event, in lazyInit"
-    const MSG2 = "Error event, in lazyInit"
-    logger.info(MSG1) // lazy initialization of the appender
-    const EXPECTED_NUM = 1
-    const ACTUAL_NUM = logger.getAppenders().length ?? 0
-    Assert.equals(ACTUAL_NUM, EXPECTED_NUM, "Logger(Lazy init)-appender")
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO)
+    logger.info(msg1) // lazy initialization of the appender
+    expectedNum = 1
+    actualNum = logger.getAppenders().length ?? 0
+    Assert.equals(actualNum, expectedNum, "Logger(Lazy init)-appender")
 
     // Lazy initialization of the singleton with default parameters (WARN,EXIT)
-    Logger.clearInstance()
-    Assert.isNotNull(Logger.getInstance(), "Lazy init(logger != null)")
-    Logger.clearInstance()
+    LoggerImpl.clearInstance()
+    Assert.isNotNull(LoggerImpl.getInstance(), "Lazy init(logger != null)")
+    LoggerImpl.clearInstance()
+    
+    // Testing ScriptError when no appender is defined
+    expectedEvent = new LogEventImpl(msg2, LOG_EVENT.ERROR)
     Assert.throws(
-      () => logger.error(MSG2),
+      () => logger.error(msg2),
       ScriptError,
-      `[ERROR] ${MSG2}`,
+      AbstractAppender.getLayout().format(expectedEvent as LogEvent),
       "Logger(Lazy init)-Logger"
     )
 
-    TestCase.clearAllSingleton()
+
+    TestCase.clear()
   }
 
   /** Unit tests when the Logger the level is LEVEL.OFF. 
@@ -362,38 +503,50 @@ class TestCase {
    * doesn't have any effect.
    */
   public static loggerLevelOFF() {
-    TestCase.clearAllSingleton()
+    TestCase.clear()
+    TestCase.setShortLayout()
+
+    // Defining the variables to be used in the tests
+    let layout: Layout, logger: Logger, expectedNum: number, actualNum: number
+
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
 
     // Testing OFF, CONTINUE
     const MSG = "event not sent in LevelOFF"
-    let logger = Logger.getInstance(Logger.LEVEL.OFF, Logger.ACTION.CONTINUE)
+    expectedNum = 0
+    actualNum = 0
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.OFF, LoggerImpl.ACTION.CONTINUE)
     logger.error(MSG) // Not sent
-    let expectedNum = 0
-    let actual = logger.getMessages().length
-    Assert.equals(expectedNum, actual, "LoggerLevelOff(OFF,CONTINUE)-error")
+    Assert.equals(expectedNum, actualNum, "LoggerLevelOff(OFF,CONTINUE)-error")
     logger.warn(MSG) // Not sent
     expectedNum = 0
-    actual = logger.getMessages().length
-    Assert.equals(expectedNum, actual, "LoggerLevelOff(OFF,CONTINUE)-warning")
+    actualNum = logger.getCriticalEvents().length
+    Assert.equals(expectedNum, actualNum, "LoggerLevelOff(OFF,CONTINUE)-warning")
 
     // Testing OFF, EXIT
-    Logger.clearInstance()
-    Logger.getInstance(Logger.LEVEL.OFF, Logger.ACTION.EXIT)
+    LoggerImpl.clearInstance()
+    LoggerImpl.getInstance(LoggerImpl.LEVEL.OFF, LoggerImpl.ACTION.EXIT)
     logger.error(MSG)
     expectedNum = 0
-    actual = logger.getMessages().length
-    Assert.equals(expectedNum, actual, "LoggerLevelOFF(OFF,EXIT)-error")
-    TestCase.clearAllSingleton()
+    actualNum = logger.getCriticalEvents().length
+    Assert.equals(expectedNum, actualNum, "LoggerLevelOFF(OFF,EXIT)-error")
+
+    TestCase.clear()
   }
 
   /**Unit tests for Logger class checking the behaviour after the singleton was reset
    */
   public static loggerResetSingleton(workbook: ExcelScript.Workbook, msgCell: string) {
-    TestCase.clearAllSingleton()
-    let logger = Logger.getInstance()
-    Logger.clearInstance() // Singleton is undefined
+    TestCase.clear()
+    TestCase.setShortLayout()
+
+    // Defining the variables to be used in the tests
+    let logger: Logger
+
+    logger = LoggerImpl.getInstance()
+    LoggerImpl.clearInstance() // Singleton is undefined
     // Now we need to invoke a method that doesn't invoke lazy initialization
-    const EXPECTED_MSG = "In 'Logger' class a singleton instance can't be undefined or null. Please invoke getInstance first"
+    const EXPECTED_MSG = "In 'LoggerImpl' class a singleton instance can't be undefined or null. Please invoke getInstance first."
     Assert.throws(
       () => logger.getErrCnt(),
       ScriptError,
@@ -419,7 +572,7 @@ class TestCase {
       "loggerResetSingleton(hasWarnings())"
     )
     Assert.throws(
-      () => logger.getMessages(),
+      () => logger.getCriticalEvents(),
       ScriptError,
       EXPECTED_MSG,
       "loggerResetSingleton(getMessages())"
@@ -443,45 +596,57 @@ class TestCase {
       "loggerResetSingleton(getLevel())"
     )
 
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
-  /**Unit Tess for Logger class for testing counters */
+  /**Unit Tests for Logger class for testing counters */
   public static loggerCounters() {
-    TestCase.clearAllSingleton()
-    let logger = Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
+    TestCase.clear()
+    TestCase.setShortLayout()
+
+    // Defining the variables to be used in the tests
+    let logger: Logger, layout: Layout, actualNum: number, expectedNum: number,
+      actualEvent: LogEvent|null, expectedEvent: LogEvent, errMsg: string, warnMsg: string
+    // Initializing the logger with a short layout
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
+    
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO, LoggerImpl.ACTION.CONTINUE)
     logger.addAppender(ConsoleAppender.getInstance())
     // Testing counters on initial state
     Assert.equals(logger.getErrCnt(), 0, "loggerCounters(getErrCnt=0)")
     Assert.equals(logger.getWarnCnt(), 0, "loggerCounters(getWarnCnt=0)")
     Assert.equals(logger.hasErrors(), false, "loggerCounters(hasErrors=false)")
     Assert.equals(logger.hasWarnings(), false, "loggerCounters(hasWarnings=false)")
-    Assert.equals(logger.getMessages(), [], "loggerCounters(getMessages=[])")
+    Assert.equals(logger.getCriticalEvents(), [], "loggerCounters(getMessages=[])")
 
     // Sending events affecting the counter
-    const ERR_MSG = "Error event in counters"
-    logger.error(ERR_MSG)
-    let expectedNum = 1
-    let actualNum = logger.getErrCnt()
+    errMsg = "Error event in counters"
+    logger.error(errMsg)
+    expectedNum = 1
+    actualNum = logger.getErrCnt()
     Assert.equals(actualNum, expectedNum, "loggerCounters(getErrCnt=1)")
-    let actualStr = logger.getMessages()[0]
-    let expectedStr = `[ERROR] ${ERR_MSG}`
-    Assert.equals(actualStr, expectedStr, "LoggerCounters(getMessage()[0])")
+    actualEvent = logger.getCriticalEvents()[0] ?? null // Get the first event
+    expectedEvent = new LogEventImpl(errMsg, LOG_EVENT.ERROR)
+    Assert.isNotNull(actualEvent, "LoggerCounters(getMessage()[0]) not null")
+    Assert.equals((actualEvent as LogEvent).type, expectedEvent.type, "LoggerCounters(getMessage()[0]).type")
+    Assert.equals((actualEvent as LogEvent).message, expectedEvent.message, "LoggerCounters(getMessage()[0]).message")
+
 
     // Testing counter for warnings
-    let WARN_MSG = "Warning event in counters"
-    logger.warn(WARN_MSG)
+    warnMsg = "Warning event in counters"
+    logger.warn(warnMsg)
     expectedNum = 1
     actualNum = logger.getWarnCnt()
     Assert.equals(actualNum, expectedNum, "loggerCounters(getWarnCnt=1)")
     // Testing messages
-    let expectedArr = [`[ERROR] ${ERR_MSG}`, `[WARN] ${WARN_MSG}`]
-    let actualArr = logger.getMessages()
+    let expectedArr = TestCase.simplifyLogEvents([new LogEventImpl(errMsg,LOG_EVENT.ERROR), 
+      new LogEventImpl(warnMsg, LOG_EVENT.WARN)])
+    let actualArr = TestCase.simplifyLogEvents(logger.getCriticalEvents())
     Assert.equals(actualArr, expectedArr, "loggerCounters(getMessages)")
     Assert.equals(logger.hasMessages(), true, "loggerCounters(hasMessages)")
     // Testing other events, don't affect the counters
-    let MSG = "No sent event"
-    logger.info(MSG)
+    let msg = "No sent event"
+    logger.info(msg)
     actualNum = logger.getErrCnt()
     Assert.equals(actualNum, expectedNum, "LoggerCounter(getErrCnt=1)")
     actualNum = logger.getWarnCnt()
@@ -496,183 +661,205 @@ class TestCase {
     actualNum = logger.getWarnCnt()
     Assert.equals(actualNum, expectedNum, "LoggerCounter(warnings cleared)")
     expectedArr = []
-    actualArr = logger.getMessages()
+    actualArr = logger.getCriticalEvents()
     Assert.equals(actualArr, expectedArr, "LoggerCounter(messages cleared)")
     // Checking appenders were not removed
     expectedNum = 1
     actualNum = logger.getAppenders().length
     Assert.equals(actualNum, expectedNum, "LoggerCounter(appenders not removed)")
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
   /**Unit Tests for Logger class on toString method */
   public static loggerToString() {
-    TestCase.clearAllSingleton()
-    let logger = Logger.getInstance(Logger.LEVEL.INFO, // Level of verbose
-      Logger.ACTION.CONTINUE)
+    TestCase.clear()
+    TestCase.setShortLayout()
+    // Defining the variables to be used in the tests
+    let expected: string, actual: string, layout: Layout, logger: Logger
+
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO, // Level of verbose
+      LoggerImpl.ACTION.CONTINUE)
     const MSGS = ["Error event in loggerToString", "Warning event in loggerToString"]
     logger.error(MSGS[0]) // lazy initialization of the appender
     logger.warn(MSGS[1])
-    let expected = `Logger: {Level: "INFO", Action: "CONTINUE", Error Count: "1", Warning Count: "1"}`
-    let actual = Logger.getInstance().toString()
+    expected = `Logger: {Level: "INFO", Action: "CONTINUE", Error Count: "1", Warning Count: "1"}`
+    actual = logger.toString()
     //console.log(logger.toString())
     Assert.equals(actual, expected, "loggerToString(Logger)")
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
   /**Unit Tests for Logger class for method exportState */
   public static loggerExportState(): void {
-    TestCase.clearAllSingleton()
-    let logger = Logger.getInstance(Logger.LEVEL.TRACE, Logger.ACTION.CONTINUE)
-    const MSGS = ["warning event in exportState", "error event in exportState"]
+    TestCase.clear()
+    TestCase.setShortLayout()
+
+    // Defining the variables to be used in the tests
+    let logger: Logger, layout: Layout, expectedEvents: LogEvent[],
+      messages: string[], state: { level: string, action: string, 
+        errorCount: number, warningCount: number, criticalEvents: LogEvent[] }, msgs: string[]
+
+    layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.TRACE, LoggerImpl.ACTION.CONTINUE)
+    msgs = ["warning event in exportState", "error event in exportState"]
     logger.trace("trace event in exportState")
     logger.info("info event in exportState")
-    logger.warn(MSGS[0])
-    logger.error(MSGS[1])
-    const state = logger.exportState()
+    logger.warn(msgs[0])
+    logger.error(msgs[1])
+    state = logger.exportState()
     Assert.equals(state.level, "TRACE", "loggerExportState(level)")
     Assert.equals(state.action, "CONTINUE", "loggerExportState(action)")
     Assert.equals(state.errorCount, 1, "loggerExportState(errorCount)")
     Assert.equals(state.warningCount, 1, "loggerExportState(warningCount)")
-    Assert.equals(state.messages.length, 2, "loggerExportState(messages.length)")
-    const messages: string[] = [`[WARN] ${MSGS[0]}`, `[ERROR] ${MSGS[1]}`]
-    Assert.equals(state.messages, messages, "loggerExportState(messages))")
-    TestCase.clearAllSingleton()
+    Assert.equals(state.criticalEvents.length, 2, "loggerExportState(messages.length)")
+    expectedEvents = [
+      new LogEventImpl(msgs[0], LOG_EVENT.WARN),
+      new LogEventImpl(msgs[1], LOG_EVENT.ERROR)]
+    Assert.equals(TestCase.simplifyLogEvents(state.criticalEvents), 
+      TestCase.simplifyLogEvents(expectedEvents), "loggerExportState(messages))")
+    TestCase.clear()
   }
 
   /**Unit tests for Logger class, for testing scenarios where a ScriptError will be thrown.
    * It also tests all defensing programming scenarios implemented.
    */
   public static loggerScriptError(workbook: ExcelScript.Workbook, msgCell: string) {
-    TestCase.clearAllSingleton()
-    Logger.clearInstance()
+    TestCase.clear()
+    TestCase.setShortLayout()
 
+    // Defining the variables to be used in the tests
+    let logger: Logger, expectedMsg: string, actualMsg: string, appender: Appender,
+      consoleAppender: ConsoleAppender, excelAppender: ExcelAppender, activeSheet: ExcelScript.Worksheet,
+      msgCellRng: ExcelScript.Range
+      
     // Testing non valid Logger.ACTION
-    let expectedMsg = "The input value level='-1', was not defined in Logger.LEVEL."
+    expectedMsg = "The input value level='-1', was not defined in Logger.LEVEL."
     Assert.throws(
-      () => Logger.getInstance(-1, Logger.ACTION.CONTINUE),
+      () => LoggerImpl.getInstance(-1, LoggerImpl.ACTION.CONTINUE),
       ScriptError,
       expectedMsg,
       "loggerScriptError-Non valid LOG_LEVEL enum value"
     )
 
     // Testing when is invoked validateInstance method
-    Logger.clearInstance()
-    let logger = Logger.getInstance()
-    Logger.clearInstance() // now _instance is undefined
-    const EXPECTED_MSG = "In 'Logger' class a singleton instance can't be undefined or null. Please invoke getInstance first"
+    LoggerImpl.clearInstance()
+    logger = LoggerImpl.getInstance()
+    LoggerImpl.clearInstance() // now _instance is undefined
+    expectedMsg = "In 'LoggerImpl' class a singleton instance can't be undefined or null. Please invoke getInstance first."
     Assert.throws(
       () => logger.getErrCnt(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(getErrCnt())"
     )
     Assert.throws(
       () => logger.getWarnCnt(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError-(getWarnCnt())"
     )
     Assert.throws(
-      () => logger.getMessages(),
+      () => logger.getCriticalEvents(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError-(getMessages())"
-    )
-    Assert.throws(
-      () => logger.getAppenders(),
-      ScriptError,
-      EXPECTED_MSG,
-      "loggerScriptError(getAppenders())"
     )
     Assert.throws(
       () => logger.getLevel(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(getLevel())"
     )
     Assert.throws(
       () => logger.getAction(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(getAction())"
     )
     Assert.throws(
       () => logger.hasErrors(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(hasErrors())"
     )
     Assert.throws(
       () => logger.hasWarnings(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(hasWarnings())"
     )
     Assert.throws(
       () => logger.clear(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(clear())"
     )
-    // Testing add appenders under singleton cleared
-    const activeSheet = workbook.getActiveWorksheet()
-    const sheetName = activeSheet.getName()
-    let consoleAppender = ConsoleAppender.getInstance()
+    // Testing adding/setting/removing appender with undefined/null singleton
+    consoleAppender = ConsoleAppender.getInstance()
+    Assert.throws(
+      () => logger.getAppenders(),
+      ScriptError,
+      expectedMsg,
+      "loggerScriptError(getAppenders())-undefined singleton"
+    )
     Assert.throws(
       () => logger.addAppender(consoleAppender),
       ScriptError,
-      EXPECTED_MSG,
-      "loggerScriptError(addAppender())"
+      expectedMsg,
+      "loggerScriptError(addAppender())-undefined singleton"
     )
     Assert.throws(
       () => logger.removeAppender(consoleAppender),
       ScriptError,
-      EXPECTED_MSG,
-      "loggerScriptError(removeAppender())"
+      expectedMsg,
+      "loggerScriptError(removeAppender())-undefined singleton"
     )
     Assert.throws(
       () => logger.setAppenders([consoleAppender, consoleAppender]),
       ScriptError,
-      EXPECTED_MSG,
-      "loggerScriptError(setAppenders(duplicated))"
+      expectedMsg,
+      "loggerScriptError(setAppenders(duplicated))-undefined singleton"
     )
     Assert.throws(
       () => logger.toString(),
       ScriptError,
-      EXPECTED_MSG,
+      expectedMsg,
       "loggerScriptError(toString())"
     )
-    // Testing adding a null/undefined appender
-    Logger.clearInstance()
-    expectedMsg = "You can't add an appender that is null of undefined in the 'Logger' class"
-    Logger.getInstance()
+    LoggerImpl.clearInstance()
+    // Testing adding a null/undefined appender to a valid singleton
+    
+    consoleAppender = ConsoleAppender.getInstance()
+    LoggerImpl.clearInstance()
+    expectedMsg = "You can't add an appender that is null or undefined in the 'LoggerImpl' class."
+    LoggerImpl.getInstance()
+
     Assert.throws(
       () => logger.addAppender(null as unknown as Appender),
       ScriptError,
       expectedMsg,
-      "loggerScriptError(addAppenders()-null)"
+      "loggerScriptError(addAppenders()-null-valid-singleton)"
     )
     Assert.throws(
       () => logger.addAppender(undefined as unknown as Appender),
       ScriptError,
       expectedMsg,
-      "loggerScriptError(addAppenders()-undefined)"
+      "loggerScriptError(addAppenders()-undefined-valid-singleton)"
     )
     // Adding appenders via setAppenders
-  
     expectedMsg = "Invalid input: 'appenders' must be a non-null array."
     Assert.throws(
       () => logger.setAppenders(undefined as unknown as Appender[]),
       ScriptError,
       expectedMsg,
-      `Internal Error(setAppenders)-undefined`
+      `Internal Error(setAppenders)-undefined-valid singleton`
     )
     Assert.throws(
       () => logger.setAppenders(null as unknown as Appender[]),
       ScriptError,
       expectedMsg,
-      "loggerScriptError(setAppenders)-null"
+      "loggerScriptError(setAppenders)-null-valid-singleton"
     )
   
     expectedMsg = "Appender list contains null or undefined entry."
@@ -680,25 +867,25 @@ class TestCase {
       () => logger.setAppenders([consoleAppender, null as unknown as Appender]),
       ScriptError,
       expectedMsg,
-      "loggerScriptError-[consoleAppender,null]"
+      "loggerScriptError-[consoleAppender,null]-valid singleton"
     )
     Assert.throws(
       () => logger.setAppenders([consoleAppender, undefined as unknown as Appender]),
       ScriptError,
       expectedMsg,
-      "loggerScriptError-[consoleAppender,undefined]"
+      "loggerScriptError-[consoleAppender,undefined]-valid singleton"
     )
     expectedMsg = "Only one appender of type ConsoleAppender is allowed."
     Assert.throws(
       () => logger.setAppenders([consoleAppender, consoleAppender]),
       ScriptError,
       expectedMsg,
-      "loggerScriptError-[consoleAppender,consoleAppender]"
+      "loggerScriptError-[consoleAppender,consoleAppender]-valid singleton"
     )
 
     // Testing adding duplicate appender
-    Logger.clearInstance()
-    logger = Logger.getInstance()
+    LoggerImpl.clearInstance()
+    logger = LoggerImpl.getInstance()
     logger.addAppender(ConsoleAppender.getInstance())
     expectedMsg = "Only one appender of type ConsoleAppender is allowed."
     Assert.throws(
@@ -707,9 +894,10 @@ class TestCase {
       expectedMsg,
       "loggerScriptError-addaAppender duplicated"
     )
-    Logger.clearInstance()
-    Logger.getInstance()
-    let excelAppender = ExcelAppender.getInstance(activeSheet.getRange(msgCell))
+    LoggerImpl.clearInstance()
+    LoggerImpl.getInstance()
+    activeSheet = workbook.getActiveWorksheet()
+    excelAppender = ExcelAppender.getInstance(activeSheet.getRange(msgCell))
     expectedMsg = "Only one appender of type ExcelAppender is allowed."
     Assert.throws(
       () => logger.setAppenders([excelAppender, excelAppender]),
@@ -718,7 +906,7 @@ class TestCase {
       "loggerScriptError-setAppender - duplicated"
     )
 
-    TestCase.clearAllSingleton()
+    TestCase.clear()
   }
 
 }

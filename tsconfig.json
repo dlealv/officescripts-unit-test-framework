@@ -10,28 +10,24 @@
 //
 // - All strict type checks except strictNullChecks are enabled for code quality.
 // - Side comments explain individual settings inline.
+// - This config includes all code folders for full IntelliSense in VS Code. For a production-only build, use a separate config if needed.
 {
-  // TypeScript configuration for production build
-  // Only generate .d.ts files for code in src/, no .js files or test/mocks/wrappers included
   "compilerOptions": {
     "emitDeclarationOnly": true, // Only output .d.ts files, not .js
     "declaration": true, // Generate type declaration files
     "outDir": "dist", // Output directory for build artifacts
-    "rootDir": "src", // Specify the root directory of input files
+    "rootDir": ".", // Project root as rootDir to capture all code
     "module": "commonjs", // Module system for output
     "target": "es2019", // Set JS target (irrelevant here, but required)
     "strict": true, // Enable all strict type-checking options
-    "strictNullChecks": false, // Enable strict null/undefined checks
+    "strictNullChecks": false, // Disable strict null/undefined checks (see note above)
     "esModuleInterop": true // Enable compatibility for ES modules/CommonJS imports
   },
-  // Only include production code for builds
   "include": [
-    "src/**/*", // Include only code from src/
-    "office-scripts.d.ts", // Include type definitions for Office Scripts
-  ],
-  "exclude": [
-    "test",
-    "mocks",
-    "wrappers"
-  ] // Exclude tests, mocks, and wrappers
+    "src/**/*",            // Main source code
+    "test/**/*",           // Unit and integration tests
+    "mocks/**/*",          // Mocks for unit testing
+    "wrappers/**/*",       // Wrappers for dependency injection/testing
+    "office-scripts.d.ts"  // Office Scripts type definitions
+  ]
 }
