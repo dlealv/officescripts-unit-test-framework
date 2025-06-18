@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run main-wrapper.ts with ts-node",
+      "type": "shell",
+      "command": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    }
+  ]
+}

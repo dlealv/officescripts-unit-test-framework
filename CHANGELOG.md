@@ -10,6 +10,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.0.0] – 2025-06-15
+
+### Added
+- **AssertionError**: Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
+- **Assert enhancements**: Added new convenience methods to the `Assert` class, making test writing more robust and expressive (`unit-test-framework.ts`).
+- **New interfaces and types**: Introduced `Logger`, `Layout`, and `LogEvent` interfaces, as well as the `LogEventFactory` type, to enhance extensibility and type safety (`logger.ts`).
+- **New classes**: Added `LoggerImpl`, `Utility`, `LayoutImpl`, `LogEventImpl` (`logger.ts`), and `AssertionError` (`unit-test-framework.ts`) to provide a more modular, extensible, and testable architecture.
+- **Layout-based output customization**: Appenders now support customizable log message layouts via the `Layout` interface, which exposes a `format` method. The `LayoutImpl` class allows further customization by accepting a user-defined `formatter` function through its constructor, giving users complete control over log message formatting.
+
+### Changed
+- **Logger refactored**: The `Logger` is now an interface, implemented by the new `LoggerImpl` class. Common helper and validation methods have been moved to the `Utility` class for broader reuse.
+- **Appender output control**: All appenders now utilize shared formatting logic via the `Layout` interface (managed within `AbstractAppender`). The actual output of log messages is managed by implementing the abstract `sendEvent` method in each appender subclass.
+- **ScriptError improvement**: Improved the `ScriptError.raiseIfNeeded` helper method to support custom error handling scenarios.
+- **Standardized the output of `toString()` methods** for classes based on best practices. This includes consistent formatting, clear use of public property names, and structured output to improve debugging and testing.  
+  Reference: [Best Practices for toString() in JavaScript/TypeScript](https://stackoverflow.com/questions/65358186/best-practices-for-tostring-in-javascript-typescript)
+
+### Breaking
+- **Logger API**: The previous `Logger` class has been replaced by a `Logger` interface and a `LoggerImpl` implementation. All usages must be updated to use the new API.
+- **Appender APIs**: Output formatting is now manag ed through the `Layout` interface and its `format` method. Custom layouts may require new construction or configuration patterns. Message output must be implemented via `sendEvent` in subclasses of `AbstractAppender`.
+- Renamed `Logger.clear()` to `Logger.reset()` for clarity. The method now clearly indicates it resets only the error/warning counters and critical event messages, but does not affect singleton instances, appenders, layout, or log event factory. This change improves code readability and avoids confusion with the `clear*` family of methods used for test-only full resets.
+- **Unit testing**: Assertion error handling has changed; tests should now expect the new `AssertionError` and use the updated `Assert` methods.
+
+---
+
 ## [1.2.0] – 2025-06-09
 
 ### Changed

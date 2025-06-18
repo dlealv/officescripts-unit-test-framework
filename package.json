@@ -18,6 +18,7 @@
     "yn": "^3.1.1"
   },
   "devDependencies": {
+    "prettier": "^3.5.3",
     "strip-code": "^1.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
@@ -27,7 +28,8 @@
     "build": "npm run copy:ts && npm run strip:testonly",
     "copy:ts": "mkdir -p dist && find src/ -name \"*.ts\" -exec cp --parents {} dist/ \\;",
     "strip:testonly": "find dist/ -name \"*.ts\" -exec sed -i '/#TEST-ONLY-START/,/#TEST-ONLY-END/d' {} +",
-    "test": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts"
+    "test": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts",
+    "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug"
   },
   "keywords": [
     "office-scripts",

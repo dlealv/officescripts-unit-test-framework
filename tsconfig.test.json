@@ -1,24 +1,14 @@
-// TypeScript configuration for testing and local development.
-//
-// - This configuration extends the main project tsconfig.json, inheriting its compilerOptions and settings.
-// - Any settings defined here (such as "compilerOptions" or "include") override those in tsconfig.json for the test build context.
-// - Preference order for options:
-//     1. Settings in this file (tsconfig.test.json) take precedence over settings inherited from tsconfig.json.
-//     2. If a setting is not specified here, it falls back to tsconfig.json.
-//
-// - This file includes all source, test, mocks, and wrapper files for a complete testing context.
-// - "rootDir" is set to "." to encompass all code, not just src.
-
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs", // Use CommonJS for widest compatibility in Node test runs
-    "rootDir": "."        // All code in project root/subdirs, not just src
+    "module": "commonjs",
+    "rootDir": ".",
+    "sourceMap": true
   },
   "include": [
-    "src/**/*",           // Source code
-    "test/**/*",          // Test files
-    "mocks/**/*",         // Mock implementations for testing
-    "wrappers/**/*"       // Wrappers for dependency injection and testability
+    "src/**/*",
+    "test/**/*",
+    "mocks/**/*",
+    "wrappers/**/*"
   ]
 }

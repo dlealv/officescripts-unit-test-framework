@@ -8,12 +8,43 @@
  * Designed for easy integration and extension within Office Scripts projects.
  *
  * @remarks See the documentation for the Assert and TestRunner classes for assertion details and test execution control.
- * @author David Leal
- * @date 2025-06-03
- * @version 1.0
+ * author David Leal
+ * date 2025-06-03
+ * version 1.2.0
  */
 
-/** Utility class for writing unit-test-style assertions.
+/**
+ * AssertionError is a custom error type used to indicate assertion failures in tests or validation utilities.
+ * 
+ * This error is intended to be thrown by assertion methods (such as those in a custom Assert class) when a condition
+ * that should always be true is found to be false. Using a specific AssertionError type allows for more precise
+ * error handling and clearer reporting in test environments, as assertion failures can be easily distinguished from
+ * other kinds of runtime errors.
+ * 
+ * Typical usage:
+ * 
+ * ```typescript
+ * if (actual !== expected) {
+ *   throw new AssertionError(`Expected ${expected}, but got ${actual}`)
+ * }
+ * ```
+ * 
+ * Features:
+ * - Inherits from the built-in Error class.
+ * - Sets the error name to "AssertionError" for easier identification.
+ * - Accepts a message parameter describing the assertion failure.
+ * 
+ * This class is intentionally simple—no extra methods or properties are added, to keep assertion failures clear and unambiguous.
+ */
+class AssertionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "AssertionError"
+  }
+}
+
+/**
+ * Utility class for writing unit-test-style assertions.
  * Provides static methods to assert value equality and exception throwing.
  * If an assertion fails, an informative 'Error' is thrown.
  */
@@ -26,7 +57,7 @@ class Assert {
    * @param expectedErrorType - (Optional) Expected constructor of the thrown error (e.g., 'TypeError').
    * @param expectedMessage - (Optional) Exact expected error message.
    * @param message - (Optional) Additional prefix for the error message if the assertion fails.
-   * @throws Error - If no error is thrown, or if the thrown error does not match the expected type or message.
+   * @throws AssertionError - If no error is thrown, or if the thrown error does not match the expected type or message.
    *
    * @example
    * ```ts
@@ -46,21 +77,21 @@ class Assert {
       fn()
     } catch (e: unknown) {
       if (!(e instanceof Error)) {
-        throw new Error(`${MSG} Thrown value is not an Error instance.`)
+        throw new AssertionError(`${MSG}Thrown value is not an Error instance: (${Assert.safeStringify(e)})`)
       }
 
       if (expectedErrorType && !(e instanceof expectedErrorType)) {
-        throw new Error(`${MSG} Expected error type ${expectedErrorType.name}, but got ${e.constructor.name}.`)
+        throw new AssertionError(`${MSG}Expected error type ${expectedErrorType.name}, but got ${e.constructor.name}.`)
       }
 
       if (expectedMessage && e.message !== expectedMessage) {
-        throw new Error(`${MSG} Expected message "${expectedMessage}", but got "${e.message}".`)
+        throw new AssertionError(`${MSG}Expected message "${expectedMessage}", but got "${e.message}".`)
       }
 
       return // ✅ Test passed
     }
 
-    throw new Error(`${MSG} Expected function to throw, but it did not.`)
+    throw new AssertionError(`${MSG}Expected function to throw, but it did not.`)
   }
 
   /**
@@ -75,7 +106,7 @@ class Assert {
    * @param actual - The actual value.
    * @param expected - The expected value.
    * @param message - (Optional) Prefix message included in the thrown error on failure.
-   * @throws Error - If 'actual' and 'expected' are not equal.
+   * @throws AssertionError - If 'actual' and 'expected' are not equal.
    *
    * @example
    * ```ts
@@ -89,7 +120,7 @@ class Assert {
     const MSG = message ? `${message}: ` : ""
 
     if ((actual == null || expected == null) && actual !== expected) {
-      throw new Error(`${MSG}Assertion failed: actual (${actual}) !== expected (${expected})`)
+      throw new AssertionError(`${MSG}Assertion failed: actual (${Assert.safeStringify(actual)}) !== expected (${Assert.safeStringify(expected)})`)
     }
 
     if (Array.isArray(actual) && Array.isArray(expected)) {
@@ -100,34 +131,84 @@ class Assert {
     if (actual !== expected) {
       const actualType = typeof actual
       const expectedType = typeof expected
-      throw new Error(`${MSG}Assertion failed: actual (${actual} : ${actualType}) !== expected (${expected} : ${expectedType})`)
+      throw new AssertionError(`${MSG}Assertion failed: actual (${Assert.safeStringify(actual)} : ${actualType}) !== expected (${Assert.safeStringify(expected)} : ${expectedType})`)
     }
   }
 
   /**
-   * Asserts that the given value is strictly 'null'.
+   * Asserts that the given value is strictly `null`.
+   * Provides a robust stringification of the value for error messages,
+   * guarding against unsafe or error-throwing `toString()` implementations.
    * @param value - The value to test.
    * @param message - Optional message to prefix in case of failure.
-   * @throws Error if the value is not exactly 'null'.
+   * @throws AssertionError if the value is not exactly `null`.
    */
   public static isNull(value: unknown, message: string = ""): asserts value is null {
     const MSG = message ? `${message}: ` : ""
     if (value !== null) {
-      throw new Error(`${MSG}Expected value to be null, but got (${value})`)
+      throw new AssertionError(
+        `${MSG}Expected value to be null, but got (${Assert.safeStringify(value)})`
+      )
     }
   }
 
   /**
- * Asserts that the given value is strictly not 'null'.
- * @param value - The value to test.
- * @param message - Optional message to prefix in case of failure.
- * @throws Error if the value is not exactly 'null'.
- */
-  public static isNotNull(value: unknown, message: string = ""): asserts value is null {
+   * Asserts that the given value is not `null`.
+   * Provides a robust stringification of the value for error messages,
+   * guarding against unsafe or error-throwing `toString()` implementations.
+   * @param value - The value to test.
+   * @param message - Optional message to prefix in case of failure.
+   * @throws AssertionError if the value is `null`.
+   */
+  public static isNotNull<T>(value: T, message: string = ""): asserts value is NonNullable<T> {
     const MSG = message ? `${message}: ` : ""
-    if (value == null) {
-      throw new Error(`${MSG}Expected value to be not null, but got (${value})`)
+    if (value === null) {
+      throw new AssertionError(
+        `${MSG}Expected value not to be null, but got (${Assert.safeStringify(value)})`
+      )
     }
+  }
+
+  /**
+   * Asserts that the provided object is an instance of the specified class or constructor.
+   * Throws an error if the assertion fails.
+   *
+   * @param obj - The object to check.
+   * @param cls - The constructor function (class) to check against.
+   * @param message - (Optional) Custom error message to display if the assertion fails.
+   */
+  static instanceOf(obj: any, cls: Function, message?: string) {
+    if (!(obj instanceof cls)) {
+      throw new AssertionError(
+        message || `Expected object to be instance of ${cls.name}, got ${obj?.constructor?.name}`
+      )
+    }
+  }
+
+  /**
+   * Asserts that the provided object is NOT an instance of the specified class or constructor.
+   * Throws an error if the assertion fails.
+   *
+   * @param obj - The object to check.
+   * @param cls - The constructor function (class) to check against.
+   * @param message - (Optional) Custom error message to display if the assertion fails.
+   */
+  static notInstanceOf(obj: any, cls: Function, message?: string) {
+    if (obj instanceof cls) {
+      throw new AssertionError(
+        message || `Expected object NOT to be instance of ${cls.name}, but got ${obj.constructor.name}`
+      )
+    }
+  }
+
+  /**
+   * Fails the test by throwing an error with the provided message.
+   *
+   * @param message - (Optional) The failure message to display.
+   *                  If not provided, a default "Assertion failed" message is used.
+   */
+  static fail(message?: string) {
+    throw new AssertionError(message || "Assertion failed")
   }
 
   /**
@@ -143,42 +224,106 @@ class Assert {
     message?: string
   ): void {
     if (typeof typeOrConstructor === "string") {
-      // Primitive type check
       if (typeof value !== typeOrConstructor) {
-        throw new Error(
+        throw new AssertionError(
           message ||
-          `Expected type '${typeOrConstructor}', but got '${typeof value}'.`
+          `Expected type '${typeOrConstructor}', but got '${typeof value}': (${Assert.safeStringify(value)})`
         )
       }
     } else if (typeof typeOrConstructor === "function") {
-      // Instance of constructor check
       if (!(value instanceof typeOrConstructor)) {
-        const ctorName = typeOrConstructor.name || "unknown";
-        throw new Error(
+        const ctorName = typeOrConstructor.name || "unknown"
+        throw new AssertionError(
           message ||
-          `Expected value to be instance of '${ctorName}', but got '${value?.constructor?.name ?? typeof value}'.`
+          `Expected value to be instance of '${ctorName}', but got '${value?.constructor?.name ?? typeof value}': (${Assert.safeStringify(value)})`
         )
       }
     } else {
-      throw new Error("Invalid typeOrConstructor argument.")
+      throw new AssertionError("Invalid typeOrConstructor argument.")
     }
   }
 
   /**
- * Asserts that two one-dimensional arrays are equal by type and value.
- * Supports arrays of primitives and arrays of objects (shallow comparison via JSON.stringify).
- * Designed for internal use only.
- * @param a - Actual array.
- * @param b - Expected array.
- * @param message - (Optional) Prefix message for errors.
- * @throws Error - If arrays differ in length, type, or value at any index.
- * @private
- */
+   * Asserts that the provided function does NOT throw an error.
+   * If an error is thrown, an AssertionError is thrown with the provided message or details of the error.
+   *
+   * @param fn - A function that is expected to NOT throw.
+   *             Must be passed as a function reference, e.g. '() => codeThatShouldNotThrow()'.
+   * @param message - (Optional) Prefix for the error message if the assertion fails.
+   *
+   * @throws AssertionError - If the function throws any error.
+   *
+   * @example
+   * ```ts
+   * Assert.doesNotThrow(() => {
+   *   const x = 1 + 1
+   * }, "Should not throw any error")
+   * ```
+   */
+  public static doesNotThrow(fn: () => void, message: string = ""): void {
+    const MSG = message ? `${message}: ` : ""
+    try {
+      fn()
+    } catch (e) {
+      throw new AssertionError(`${MSG}Expected function not to throw, but it threw: ${Assert.safeStringify(e)}`)
+    }
+  }
+
+  /**
+   * Asserts that the provided value is truthy.
+   * Throws AssertionError if the value is not truthy.
+   *
+   * @param value - The value to test for truthiness.
+   * @param message - (Optional) Message to prefix in case of failure.
+   * @throws AssertionError - If the value is not truthy.
+   *
+   * @example
+   * ```ts
+   * Assert.isTrue(1 < 2, "Math sanity")
+   * Assert.isTrue("non-empty string", "String should be truthy")
+   * ```
+   */
+  public static isTrue(value: unknown, message: string = ""): asserts value {
+    const MSG = message ? `${message}: ` : ""
+    if (!value) {
+      throw new AssertionError(`${MSG}Expected value to be truthy, but got (${Assert.safeStringify(value)})`)
+    }
+  }
+
+  /**
+   * Asserts that the provided value is falsy.
+   * Throws AssertionError if the value is not falsy.
+   *
+   * @param value - The value to test for falsiness.
+   * @param message - (Optional) Message to prefix in case of failure.
+   * @throws AssertionError - If the value is not falsy.
+   *
+   * @example
+   * Assert.isFalse(0, "Zero should be falsy")
+   * Assert.isFalse("", "Empty string should be falsy")
+   */
+  public static isFalse(value: unknown, message: string = ""): void {
+    const MSG = message ? `${message}: ` : ""
+    if (value) {
+      throw new AssertionError(`${MSG}Expected value to be falsy, but got (${Assert.safeStringify(value)})`)
+    }
+  }
+
+  /**
+   * Asserts that two one-dimensional arrays are equal by type and value.
+   * Supports arrays of primitives and arrays of objects (shallow comparison via JSON.stringify).
+   * Designed for internal use only.
+   * @param a - Actual array.
+   * @param b - Expected array.
+   * @param message - (Optional) Prefix message for errors.
+   * @throws Error - If arrays differ in length, type, or value at any index.
+   * @private
+   */
   private static arraysEqual<T>(a: T[], b: T[], message: string = ""): boolean {
     const MSG = message ? `${message}: ` : ""
 
     if (a.length !== b.length) {
-      throw new Error(`${MSG}Array length mismatch: actual (${a.length}) !== expected (${b.length})`)
+      throw new AssertionError(`${MSG}Array length mismatch: actual (${a.length}) !== expected (${b.length})`)
     }
 
     for (let i = 0; i < a.length; i++) {
@@ -188,22 +333,43 @@ class Assert {
       const expectedType = typeof expectedValue
 
       if (actualType !== expectedType) {
-        throw new Error(`${MSG}Array type mismatch at index ${i}: actual (${actualValue} : ${actualType}) !== expected (${expectedValue} : ${expectedType})`)
+        throw new AssertionError(`${MSG}Array type mismatch at index ${i}: actual (${Assert.safeStringify(actualValue)} : ${actualType}) !== expected (${Assert.safeStringify(expectedValue)} : ${expectedType})`)
       }
 
-      // If comparing objects, use JSON.stringify for shallow deep equality
       if (actualType === "object" && expectedType === "object" && actualValue !== null && expectedValue !== null) {
         if (JSON.stringify(actualValue) !== JSON.stringify(expectedValue)) {
-          throw new Error(`${MSG}Array object value mismatch at index ${i}: actual (${JSON.stringify(actualValue)}) !== expected (${JSON.stringify(expectedValue)})`)
+          throw new AssertionError(`${MSG}Array object value mismatch at index ${i}: actual (${Assert.safeStringify(actualValue)}) !== expected (${Assert.safeStringify(expectedValue)})`)
         }
         continue
       }
 
       if (actualValue !== expectedValue) {
-        throw new Error(`${MSG}Array value mismatch at index ${i}: actual (${actualValue}) !== expected (${expectedValue})`)
+        throw new AssertionError(`${MSG}Array value mismatch at index ${i}: actual (${Assert.safeStringify(actualValue)}) !== expected (${Assert.safeStringify(expectedValue)})`)
       }
     }
     return true // for consistency; return value is not used
+  }
+
+  /**
+   * Returns a safe string representation of any value, handling cases where
+   * toString may throw or misbehave. Used internally by assertion methods.
+   * @param value - The value to stringify.
+   * @returns A string representation of the value, or a fallback if not possible.
+   */
+  private static safeStringify(value: unknown): string {
+    try {
+      if (typeof value === "string") return `"${value}"`
+      if (value && typeof value === "object") {
+        try {
+          return JSON.stringify(value)
+        } catch {
+          return value.toString?.() ?? Object.prototype.toString.call(value)
+        }
+      }
+      return String(value)
+    } catch {
+      return "[unprintable value]"
+    }
   }
 }
 
@@ -297,7 +463,7 @@ class TestRunner {
   public exec(name: string, fn: () => void, indent: number = 2): void {
     this.title(`${TestRunner.START} ${name}`, indent);
     if (typeof fn !== "function") {
-      throw new Error("TestRunner.exec() expects a function as input.");
+      throw new AssertionError("TestRunner.exec() expects a function as input.");
     }
     fn()
     this.title(`${TestRunner.END} ${name}`, indent)
@@ -317,5 +483,9 @@ if (typeof globalThis !== "undefined") {
   if (typeof Assert !== "undefined") {
     // @ts-ignore
     globalThis.Assert = Assert
+  }
+  if (typeof AssertionError !== "undefined") {
+    // @ts-ignore
+    globalThis.AssertionError = AssertionError
   }
 }

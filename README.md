@@ -15,19 +15,6 @@ Add robust, structured logs to your Excel automations with control over log leve
 
 ---
 
-## Lazy Initialization: What You Need to Know
-
-- **Logger Singleton:**  
-  - You do **not** have to manually create the Logger instance before using it.  
-  - If you call any logging method (e.g., `Logger.info("...")`) before calling `getInstance()`, the Logger will be **automatically created** with default settings (`WARN` level, `EXIT` action).
-- **Default ConsoleAppender:**  
-  - If you log a message and **no appender** has been added, a `ConsoleAppender` will be **automatically created and added**. This ensures logs are never lost, even if you forget to add an appender.
-
-**Summary:**  
-You can start logging immediately, but for best results (and explicit configuration), initialize the Logger and add your desired appenders as shown below.
-
----
-
 ## Getting Started
 
 ### 1. Add the Logger to Your Script
@@ -35,7 +22,7 @@ You can start logging immediately, but for best results (and explicit configurat
 **Production use in Office Scripts:**  
 Copy the contents of `src/logger.ts` into your script in the Office Scripts editor.  
 
-**No imports or modules are needed.** Just paste the code above your main function.
+> No imports or modules are needed. Just paste the code above your `main` function.
 
 ### 2. Initialize the Logger (Recommended)
 
@@ -44,27 +31,24 @@ Copy the contents of `src/logger.ts` into your script in the Office Scripts edit
 Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
 Logger.addAppender(ConsoleAppender.getInstance()) // Add console appender
 ```
-> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings and a console appender:
-> - `Logger` will be initialized with verbosity level up to warnings, and in case of error/warning, execution stops by throwing a `ScriptError`.
-> - The default appender used will be the `ConsoleAppender`, which doesn't require any configuration input parameters.
+> If you skip this step and just call `Logger.info("...")`, the logger will be created with default settings (`WARN` level, `EXIT` action) and a console appender will be used automatically.
 
 ---
 
-## Usage Examples
-
-### Basic Logging
+## Basic Usage Examples
 
 ```typescript
-Logger.info("Script started")
-Logger.warn("This might be a problem")
-Logger.error("A fatal error occurred")
-Logger.trace("Step-by-step details for debugging")
+Logger.info("Script started")             // [INFO] Script started.
+Logger.warn("This might be a problem")    // [WARN] This might be a problem.
+Logger.error("A fatal error occurred")    // [ERROR] A fatal error occurred
+Logger.trace("Step-by-step details")      // [TRACE] Step-by-step details
 ```
-> Even if you haven’t explicitly initialized the Logger or added an appender, logging will still work (see Lazy Initialization above).
+
+> Output as shown above uses the short layout. With the default layout, a timestamp and brackets are included.
 
 ### Logging to Excel Cell
 
-Use an `ExcelAppender` if you want to display log output directly in a specific cell in your Excel file while running your script.
+Display log output directly in a cell while your script runs:
 
 ```typescript
 function main(workbook: ExcelScript.Workbook) {
@@ -73,10 +57,22 @@ function main(workbook: ExcelScript.Workbook) {
   Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
   Logger.addAppender(ExcelAppender.getInstance(cell))
 
-  Logger.info("Log written to Excel!")
-  Logger.warn("This warning appears in cell B1.")
+  Logger.info("Log written to Excel!")    // Output in cell B1: [INFO] Log written to Excel! (green text)
+  Logger.trace("Trace event in cell")     // Output in cell B1: [TRACE] Trace event in cell (gray text)
 }
 ```
+
+---
+
+## Lazy Initialization: What You Need to Know
+
+- **Logger Singleton:**  
+  - If you call any logging method (e.g., `Logger.info("...")`) before calling `getInstance()`, the Logger will be automatically created with default settings (`WARN` level, `EXIT` action).
+- **Default ConsoleAppender:**  
+  - If you log a message and no appender has been added, a `ConsoleAppender` will be automatically created and added to ensure logs are not lost.
+
+**Summary:**  
+You can start logging immediately, but for best results (and explicit configuration), initialize the Logger and add your desired appenders as shown above.
 
 ---
 
@@ -84,7 +80,7 @@ function main(workbook: ExcelScript.Workbook) {
 
 ### Log Levels
 
-Set the **minimum severity** of messages to be logged:
+Set the **maximum verbosity level** of messages to be logged:
 
 - `Logger.LEVEL.OFF`: No logs
 - `Logger.LEVEL.ERROR`: Only errors
@@ -97,7 +93,7 @@ Set the **minimum severity** of messages to be logged:
 - `Logger.ACTION.CONTINUE`: Log the event, continue script execution
 - `Logger.ACTION.EXIT`: Log the event and throw a `ScriptError`, terminating the script (default)
 
-> The configuration above only applies for log events sent to the appenders. If the level is `Logger.LEVEL.OFF`, no log events will be sent to any appender, and therefore the action configuration doesn't take effect.
+> If the log level is `Logger.LEVEL.OFF`, no messages will be sent to any appender, and the action configuration does not take effect.
 
 ### Appenders
 
@@ -116,50 +112,105 @@ Set the **minimum severity** of messages to be logged:
 - Remove: `Logger.removeAppender(appender)`
 - Replace all: `Logger.setAppenders([appender1, appender2])`
 - **Only one of each appender type is allowed; duplicates will throw an error.**
+- **You cannot add null/undefined as an appender, nor can you provide an array with null/undefined elements.**
 
 ### Inspect Logger State
 
-- Get an array of all error/warning messages sent to the appenders: `logger.getMessages()`
+- Get an array of all error/warning events: `logger.getCriticalEvents()`
 - Get error/warning counts: `logger.getErrCnt()`, `logger.getWarnCnt()`
-- Clear state (messages, counters, but not appenders): `logger.clear()`
+- Clear state (messages, counters, but not appenders): `logger.reset()` (production-safe, resets counters and critical event messages only)
 - Export state: `logger.exportState()`
-- Check if any error or warning log event has been sent to the appenders via: `logger.hasErrors()`, `logger.hasWarnings()`.
+- Check if any error/warning log event has been sent to the appenders: `logger.hasErrors()`, `logger.hasWarnings()`, or `logger.hasMessages()`
 
----
+### Resetting for Tests or Automation
 
-## Testing & Automation Scenarios
-
-When running **multiple tests** or in environments where the script runs repeatedly (e.g., local/Node.js or automated Office Scripts execution), you may want to reset the singleton logger and appender state between runs.  
-**These methods are only necessary for testing or repeated execution, not for typical Office Scripts usage:**
+If you run multiple tests or your script executes repeatedly (e.g., in Node.js or CI), reset the singleton logger and appenders between runs:
 
 ```typescript
-// Reset singleton and appender state
 Logger.clearInstance()
 ConsoleAppender.clearInstance()
 ExcelAppender.clearInstance()
+AbstractAppender.clearLayout()
+AbstractAppender.clearLogEventFactory()
 ```
-> For example, call these methods at the start of each test or repeated run to ensure a clean logger state.  
-> Note: The `clearInstance` methods are only present in the source files under the `src` folder. In the `dist` folder, such methods are removed for production safety.
+> The `clear*` family of methods (`clearInstance`, `clearLayout`, `clearLogEventFactory`) are available in the source files (`src/`). They are omitted from production builds (`dist/`).  
+> `Logger.reset()` is always available in production and only resets error/warning counters and critical messages, not the logger/appender singletons or layout/factory.
 
 ---
 
-## API Reference
+## Customization (Advanced)
 
-### Main Methods
+You can customize how log messages are formatted or how log events are constructed. This is useful for integrating with other systems, outputting logs in a specific structure (e.g., JSON, XML), or adapting the logger for unique workflows.
 
-| Method                          | Description                                                            |
-|----------------------------------|------------------------------------------------------------------------|
-| `Logger.error(message: string)`  | Logs error event with a message, if `level >= LEVEL.ERROR`             |
-| `Logger.warn(message: string)`   | Logs warning with a message, if `level >= LEVEL.WARN`                  |
-| `Logger.info(message: string)`   | Logs info with a message, if `level >= LEVEL.INFO`                     |
-| `Logger.trace(message: string)`  | Logs trace/debug details with a message, if `level >= LEVEL.TRACE`     |
+> **Important:**  
+> All customization via `AbstractAppender.setLayout()` or `AbstractAppender.setLogEventFactory()` must happen before any logger or appender is initialized or any log event is sent. These setters will not override existing configuration once logging has begun.
 
-> The methods above only send logs if the `level` argument in `Logger.getInstance` is not set to `Logger.LEVEL.OFF`.
+### Customizing Layout (Log Message Format)
 
-### Static Properties
+The content and structure of log messages sent to appenders are controlled by a `Layout` object. By default, a standard layout is used, but you can inject your own formatting logic **once** at the start of your script.
 
-- `Logger.LEVEL`: Log levels (`OFF`, `ERROR`, `WARN`, `INFO`, `TRACE`)
-- `Logger.ACTION`: Error-handling actions (`CONTINUE`, `EXIT`)
+#### Example: Short Layout (No Timestamp)
+
+`LayoutImpl.shortFormatterFun` is a public static function that produces concise log messages of the form `[LOG_EVENT] message`, omitting the timestamp.
+
+```typescript
+// Use the built-in short format: [LOG_EVENT] message (no timestamp)
+const shortLayout = new LayoutImpl(LayoutImpl.shortFormatterFun)
+AbstractAppender.setLayout(shortLayout)
+
+Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
+Logger.addAppender(ConsoleAppender.getInstance())
+
+Logger.info("Script started.")
+Logger.warn("This is a warning.")
+Logger.error("An error occurred!")
+```
+
+Sample log output:
+```
+[INFO] Script started.
+[WARN] This is a warning.
+[ERROR] An error occurred!
+```
+
+#### Example: JSON Layout
+
+```typescript
+// Format each log event as a JSON string
+const jsonLayout = new LayoutImpl(event => JSON.stringify(event))
+AbstractAppender.setLayout(jsonLayout)
+
+Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
+Logger.addAppender(ConsoleAppender.getInstance())
+
+Logger.info("Structured log output")
+```
+Sample output:
+```
+{"type":3,"message":"Structured log output","timestamp":"2025-06-15T05:34:08.123Z"}
+```
+
+> Note: `AbstractAppender.setLayout()` can only set the layout if it has not already been set. Once set, the layout is fixed for the script’s execution (unless reset via `clearLayout()` in test environments).
+
+### Customizing Log Event Creation
+
+If you want to change all log messages globally (e.g., to add an environment prefix like `[PROD]` to every message), you can set a custom `LogEventFactory` before initialization:
+
+```typescript
+// Custom LogEventFactory: prefix all messages with [PROD] for production environment
+const prodPrefixFactory: LogEventFactory = (msg, type) => new LogEventImpl(`[PROD] ${msg}`, type)
+AbstractAppender.setLogEventFactory(prodPrefixFactory)
+
+Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
+Logger.addAppender(ConsoleAppender.getInstance())
+
+Logger.info("Script started.")
+```
+Sample output (default layout):
+```
+[2025-06-15 05:34:08,123] [INFO] [PROD] Script started.
+```
+> A custom factory is useful for tagging logs or integrating with external systems, without having to change every log message call.
 
 ---
 
@@ -167,6 +218,16 @@ ExcelAppender.clearInstance()
 
 ```typescript
 function main(workbook: ExcelScript.Workbook) {
+  // Uncomment ONE of the following configuration blocks before initialization, if desired:
+
+  // // Example: Use the short layout (no timestamp)
+  // const shortLayout = new LayoutImpl(LayoutImpl.shortFormatterFun)
+  // AbstractAppender.setLayout(shortLayout)
+
+  // // Example: Prefix all messages for production
+  // const prodPrefixFactory: LogEventFactory = (msg, type) => new LogEventImpl(`[PROD] ${msg}`, type)
+  // AbstractAppender.setLogEventFactory(prodPrefixFactory)
+
   // Set verbosity up to TRACE and continue on error/warning
   Logger.getInstance(Logger.LEVEL.TRACE, Logger.ACTION.CONTINUE)
 
@@ -175,13 +236,32 @@ function main(workbook: ExcelScript.Workbook) {
   const logCell = workbook.getActiveWorksheet().getRange("C2")
   Logger.addAppender(ExcelAppender.getInstance(logCell))
 
-  // Logging
-  Logger.info("Script started.")
-  Logger.trace("This is a trace message.")
-  Logger.warn("This is a warning.")
-  Logger.error("This is an error!") // If ACTION.EXIT, this throws and aborts the script
+  // Logging (with short layout, output shown as comments):
+  Logger.info("Script started.")         // [INFO] Script started.
+  Logger.trace("This is a trace message.") // [TRACE] This is a trace message.
+  Logger.warn("This is a warning.")      // [WARN] This is a warning.
+  Logger.error("This is an error!")      // [ERROR] This is an error! (if ACTION.EXIT, aborts script)
+
+  // ExcelAppender outputs in cell C2:
+  // [INFO] Script started.         (green text)
+  // [TRACE] This is a trace message. (gray text)
 }
 ```
+> You can set the layout or log event factory only before any logger or appender is initialized, or before any log event is sent. This ensures consistent formatting and event structure throughout execution.
+
+---
+
+## Architectural Note: One-Time Setters for Layout and LogEventFactory
+
+This framework is designed so that the log message layout and log event factory can only be set once, before use. This prevents accidental changes to the log format or event structure mid-execution, ensuring consistency and reducing debugging surprises in production Office Scripts scenarios. 
+
+- Use `AbstractAppender.setLayout(...)` and `AbstractAppender.setLogEventFactory(...)` at the top of your script, before any logging, appender, or logger initialization.
+- For testing, the `clearLayout`, `clearLogEventFactory`, and `clearInstance` methods are available in the source files but are not present in production builds.
+
+**Why this design?**  
+- It keeps the API simple for the common use case and ensures logging behavior is stable and predictable.
+- Passing these configurations via `getInstance` would require adding extra rarely-used parameters to already overloaded constructors, making the API harder for most users.
+- If your scenario truly requires dynamic, runtime reconfiguration, you can fork the codebase or adapt it for your specific needs, but for most Office Scripts, stability is preferred.
 
 ---
 
@@ -194,13 +274,13 @@ function main(workbook: ExcelScript.Workbook) {
   Logger auto-adds a `ConsoleAppender`.
 
 - **Can I log to both console and Excel?**  
-  Yes, add both appenders.
+  Yes, just add both appenders.
 
 - **How do I change log level or action after initialization?**  
-  Use `Logger.clearInstance()` and then call `getInstance()` with new options.
+  In non-production/test-only scenarios, use `Logger.clearInstance()` and then call `getInstance()` with new options.
 
 - **Why do I get a `ScriptError`?**  
-  If `Logger.ACTION.EXIT` is set and `Logger.LEVEL != LEVEL.OFF`, errors/warnings throw and abort the script.
+  If you send an error or warning log event and `Logger.ACTION.EXIT` is set (and `Logger.LEVEL != LEVEL.OFF`), the logger will throw and abort the script.
 
 - **Why can I only add one of each appender type?**  
   To avoid duplicate logs on the same channel; each appender represents a unique output.
@@ -218,3 +298,5 @@ function main(workbook: ExcelScript.Workbook) {
 ## License
 
 See [LICENSE](LICENSE) for details.
+
+---

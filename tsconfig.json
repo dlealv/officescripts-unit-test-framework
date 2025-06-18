@@ -29,5 +29,9 @@
     "mocks/**/*",          // Mocks for unit testing
     "wrappers/**/*",       // Wrappers for dependency injection/testing
     "office-scripts.d.ts"  // Office Scripts type definitions
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }
