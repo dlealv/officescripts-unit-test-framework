@@ -214,6 +214,66 @@ Sample output (default layout):
 
 ---
 
+### Using `extrafields` for Structured Logging
+
+The `extrafields` parameter is an advanced feature allowing you to attach additional structured data to any log event. This is useful for tagging logs with context (like function names, user IDs, or custom metadata) and for downstream integrations (e.g., exporting logs as JSON).
+
+You can pass an object with arbitrary key-value pairs as the `extrafields` argument to any logging method. These fields will be included in the underlying `LogEventImpl` instance and are available in custom layouts, factories, or appenders.
+
+#### Example: Adding custom fields to a log entry
+
+```typescript
+Logger.info("Processing started", { step: "init", user: "alice@example.com" })
+````
+produces the following output:
+```
+[INFO] Processing started extrafields: { step: "init", user: "alice@example.com" }
+```
+and
+```typescript
+Logger.error("Failed to save", { errorCode: 42, item: "Budget2025" })
+```
+produces the following:
+```
+[ERROR] Failed to save (extrafields: { errorCode: 42, item: "Budget2025" })
+```
+
+#### How it works
+
+- The third argument to all logging methods is `extrafields`:
+  - `Logger.info(message, extrafields?)`
+  - `Logger.warn(message, extrafields?)`
+  - `Logger.error(message, extrafields?)`
+  - `Logger.trace(message, extrafields?)`
+- `extrafields` can be any object (e.g., `{ key: value, ... }`).  
+- If you use a custom layout or export logs, you can access these fields from the `LogEventImpl` object.
+
+#### Example: Exporting logs with extrafields
+
+If you export the logger state then you can iterate over all critical events to get the extra fields:
+
+```typescript
+const state = logger.exportState()
+state.criticalEvents.forEach(event => {
+  // event.extraFields will include your custom data if present
+  console.log(event.extraFields) // Output per iteration for example: { key=1, value='value' }
+})
+```
+Extra fields if present will be part of the `toString` method for the `LogEvent`:
+```typescript
+let event = new LogEventImpl("Showing toString", LOG_EVENT.INFO, {user:"admin", sessionId:"123"});
+console.log(`event(extra fields)=${event}`)
+event = new LogEventImpl("Showing toString", LOG_EVENT.INFO)
+console.log(`event=${event}`)
+```
+and the output will be (firt line the info event and the rest `toString()`)
+```
+event(extra fields)=LogEventImpl: {timestamp="2025-06-19 19:10:34,586", type="INFO", message="Showing toString", extraFields={"user":"admin","sessionId":"123"}}
+event=LogEventImpl: {timestamp="2025-06-19 19:10:34,586", type="INFO", message="Showing toString"}
+```
+
+---
+
 ## Complete Example
 
 ```typescript
@@ -293,7 +353,7 @@ This framework is designed so that the log message layout and log event factory 
 ## Additional Information
 
 - For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) if available.
-- JSDOC documentation: [JSDOC](docs/logger/index.html)
+- JSDOC documentation: [JSDOC](docs/typedoc/index.html)
 
 ## License
 
