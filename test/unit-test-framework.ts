@@ -43,6 +43,7 @@ class AssertionError extends Error {
   }
 }
 
+// #region Assert
 /**
  * Utility class for writing unit-test-style assertions.
  * Provides static methods to assert value equality and exception throwing.
@@ -373,6 +374,9 @@ class Assert {
   }
 }
 
+ // #endregion Assert
+
+ // #region TestRunner
 /**
  * A utility class for managing and running test cases with controlled console output.
  * TestRunner' supports configurable verbosity levels and allows structured logging
@@ -469,6 +473,8 @@ class TestRunner {
     this.title(`${TestRunner.END} ${name}`, indent)
   }
 }
+
+// #endregion TestRunner
 
 // ===========================================================
 // End of Lightweight unit testing framework for Office Script

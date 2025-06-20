@@ -11,11 +11,11 @@ function main(workbook: ExcelScript.Workbook,
   //const VERBOSITY = TestRunner.VERBOSITY.OFF        // uncomment the scenario of your preference
   const VERBOSITY = TestRunner.VERBOSITY.HEADER
   //const VERBOSITY = TestRunner.VERBOSITY.SECTION
-  const START_TEST = "START TEST"
+  const START_TEST = "START TEST" // Used in the title of the test run
   const END_TEST = "END TEST"
   const SHOW_TRACE = false
 
-  let run: TestRunner = new TestRunner(VERBOSITY) // Controles the test execution process
+  let run: TestRunner = new TestRunner(VERBOSITY) // Controles the test execution process specifying the verbosity level
   let success = false // Control variable to send the last message in finally
 
   // MAIN EXECUTION
@@ -141,7 +141,7 @@ class TestCase {
   }
 
   // Helper method to send all possible log event during the testing process consider all possible ACTION value scenrios.
-  // It assumes the logger is already initialized
+  // It assumes the logger is already initialized. Used in loggerImplLevels.
   public static sendLog(msg: string, type: LOG_EVENT, extraFields: LogEventExtraFields, 
     action: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION], context: string = "TestCase.sendLog"): void {
     
@@ -227,7 +227,7 @@ class TestCase {
   }
 
   /**
-   * Helper to simplify testing scenarios for all possible combinations of LEVEL,ACTION. Except for OFF level.
+   * Helper method to simplify testing scenarios for all possible combinations of LEVEL,ACTION. Except for OFF level.
    */
   private static loggerImplLevels(includeExtraFields: boolean, // If true, it will send extra fields to the log events
     level: typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL],
@@ -1345,7 +1345,7 @@ class TestCase {
   public static loggerImpl(workbook: ExcelScript.Workbook, msgCell: string): void { // Unit tests for LoggerImpl class
     TestCase.clear()
     // Defining variables
-    let logger: Logger
+    let logger: Logger, actualStr: string, expectedStr: string, appender: Appender
 
     // Checking Initial situation
     logger = LoggerImpl.getInstance()
@@ -1356,6 +1356,34 @@ class TestCase {
     Assert.equals(logger!.getAction(), LoggerImpl.ACTION.EXIT, "LoggerImpl(getInstance)-default action is EXIT")
     Assert.isNotNull(logger!.getAppenders(), "LoggerImpl(getInstance)-default appenders is not null")
     Assert.equals(logger!.getAppenders().length, 0, "LoggerImpl(getInstance)-default appenders length is 0")
+
+    // Testing getting label for LEVEL and ACTION
+    expectedStr = "OFF"
+    actualStr = LoggerImpl.getLevelLabel(LoggerImpl.LEVEL.OFF)
+    Assert.equals(actualStr, expectedStr, "LoggerImpl(getLevelLabel)-OFF label is correct")
+    expectedStr = "WARN" // Default level
+    actualStr = LoggerImpl.getLevelLabel(undefined) // non valid level
+    Assert.equals(actualStr, expectedStr, "LoggerImpl(getLevelLabel)-non valid level label is WARN")
+
+    // Testing getting action label
+    expectedStr = "CONTINUE"
+    actualStr = LoggerImpl.getActionLabel(LoggerImpl.ACTION.CONTINUE)
+    Assert.equals(actualStr, expectedStr, "LoggerImpl(getActionLabel)-CONTINUE label is correct")
+    expectedStr = "EXIT" // Default action
+    actualStr = LoggerImpl.getActionLabel(undefined) // non valid action
+    Assert.equals(actualStr, expectedStr, "LoggerImpl(getActionLabel)-non valid action label is UNKNOWN")
+
+    // Testing adding/removing appenders
+    appender = ConsoleAppender.getInstance()
+    Assert.doesNotThrow(() => logger.addAppender(appender), "LoggerImpl(addAppender) - valid case")
+    Assert.equals(logger.getAppenders().length, 1, "LoggerImpl(addAppender) - appender added")
+    Assert.isTrue(logger.getAppenders().includes(appender), "LoggerImpl(addAppender) - appender is in the list")
+    Assert.doesNotThrow(() => logger.removeAppender(appender), "LoggerImpl(removeAppender) - valid case")
+    Assert.equals(logger.getAppenders().length, 0, "LoggerImpl(removeAppender) - appender removed")
+    Assert.isFalse(logger.getAppenders().includes(appender), "LoggerImpl(removeAppender) - appender is not in the list")
+    Assert.doesNotThrow(() => logger.removeAppender(appender), "LoggerImpl(removeAppender) - empty list valid case")
+    Assert.equals(logger.getAppenders().length, 0, "LoggerImpl(removeAppender) - empty list valid case")
+
     TestCase.clear()
 
     // Testing scenario based on different combinations of LEVEL and ACTION
@@ -1386,21 +1414,6 @@ class TestCase {
     TestCase.loggerImplLevels(true, LoggerImpl.LEVEL.WARN, LoggerImpl.ACTION.EXIT, workbook, msgCell)
     TestCase.loggerImplLevels(true, LoggerImpl.LEVEL.INFO, LoggerImpl.ACTION.EXIT, workbook, msgCell)
     TestCase.loggerImplLevels(true, LoggerImpl.LEVEL.TRACE, LoggerImpl.ACTION.EXIT, workbook, msgCell)
-
-    // Testing loggerImpl.getInstance() with custom appender
-   console.log("ANTES")
-    const state = logger.exportState();
-    state.criticalEvents.forEach(event => {
-      // event.extraFields will include your custom data if present
-      console.log(event.extraFields);
-    });
-    LoggerImpl.clearInstance(); // Clear the singleton instance
-    LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO).info("Info Log event with extra fields", {user:"admin", sessionId:"123"})
-    let event = new LogEventImpl("Showing toString", LOG_EVENT.INFO, {user:"admin", sessionId:"123"});
-    console.log(`event(extra fields)=${event}`)
-    event = new LogEventImpl("Showing toString", LOG_EVENT.INFO)
-    console.log(`event=${event}`)
-    console.log("DESPUES")
 
     TestCase.clear();
   }
@@ -1616,7 +1629,7 @@ class TestCase {
     TestCase.clear()
     TestCase.setShortLayout()
     // Defining the variables to be used in the tests
-    let expected: string, actual: string, layout: Layout, logger: Logger
+    let expected: string, actual: string, layout: Layout, logger: Logger, extraFields: LogEventExtraFields
 
     //layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
     logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO, // Level of verbose
@@ -1639,11 +1652,30 @@ class TestCase {
     actual = logger.toString()
     Assert.equals(normalizeTimestamps(actual), normalizeTimestamps(expected), "loggerToString(Logger)")
 
+    // Testing toString with extra fields
+    extraFields = { userId: 123, sessionId: "abc" }
+    TestCase.clear()
+    logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO)
+    logger.info("Info event in loggerToString with extra fields", extraFields)
+    //console.log(`logger=${logger.toString()}`)
+    expected =`LoggerImpl: {level: "INFO", action: "EXIT", errCnt: 0, warnCnt: 0, appenders: [AbstractAppender: {layout=LayoutImpl: ` +
+    `{formatter: [Function: "defaultLayoutFormatterFun"]}, logEventFactory="defaultLogEventFactoryFun", ` +
+    `lastLogEvent=LogEventImpl: {timestamp="2025-06-19 22:31:17,324", type="INFO", message="Info event in loggerToString with extra fields", `+
+    `extraFields={"userId":123,"sessionId":"abc"}}} ConsoleAppender: {}]}`
+    actual = logger.toString()
+    Assert.equals(normalizeTimestamps(actual), normalizeTimestamps(expected), "loggerToString(Logger with extra fields)")
+
+    // Testing shortToString method
+    expected = `LoggerImpl: {level: "INFO", action: "EXIT", errCnt: 0, warnCnt: 0, appenders: [ConsoleAppender]}`
+    actual = (logger as LoggerImpl).toShortString()
+    Assert.equals(actual, expected, "loggerToString(LoggerImpl) short version")
+
     TestCase.clear()
 
+    // Helper function to normalize timestamps in the expected and actual strings
     function normalizeTimestamps(str: string): string {
       return str.replace(/timestamp="[^"]*"/g, 'timestamp="<TIMESTAMP>"')
-}
+  }
   }
 
   /**Unit Tests for Logger class for method exportState */

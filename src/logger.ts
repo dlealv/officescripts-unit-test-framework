@@ -1470,6 +1470,7 @@ class LoggerImpl implements Logger {
   private _warnCnt = 0;  // Counts the number of warning events found
   private _appenders: Appender[] = []; // List of appenders
 
+  // Private constructor to prevent user instantiation
   private constructor(
     level: typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL] = LoggerImpl.DEFAULT_LEVEL,
     action: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION] = LoggerImpl.DEFAULT_ACTION,
@@ -1767,26 +1768,29 @@ public trace(msg: string, extraFields?: LogEventExtraFields): void {
  * Returns "UNKNOWN" if the value is not found or logger is not initialized.
  */
   public static getActionLabel(action?: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION]): string {
-    const val = action !== undefined ? action : LoggerImpl._instance?._action;
-    if (val === undefined) return "UNKNOWN";
+    const val = action !== undefined ? action : LoggerImpl._instance?._action
+    const UNKNOWN = "UNKNOWN"
+    if (val === undefined) return UNKNOWN
     const label = Object.keys(LoggerImpl.ACTION).find(
       key => LoggerImpl.ACTION[key as keyof typeof LoggerImpl.ACTION] === val
     );
-    return label ?? "UNKNOWN";
+    return label ?? UNKNOWN
   }
 
-  /**
- * Returns the label for a log level value.
- * If no parameter is provided, uses the current logger instance's level.
- * Returns "UNKNOWN" if the value is not found or logger is not initialized.
+ /**
+ * Returns the label for the given log level.
+ * @returns The label for the log level.
+ *          If `level` is undefined, returns the label for the current logger instance's level.
+ *          If neither is set, returns "UNKNOWN".
  */
   public static getLevelLabel(level?: typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL]): string {
-    const val = level !== undefined ? level : LoggerImpl._instance?._level;
-    if (val === undefined) return "UNKNOWN";
+    const val = level !== undefined ? level : LoggerImpl._instance?._level
+    const UNKNOWN = "UNKNOWN"
+    if (val === undefined) return UNKNOWN
     const label = Object.keys(LoggerImpl.LEVEL).find(
       key => LoggerImpl.LEVEL[key as keyof typeof LoggerImpl.LEVEL] === val
     );
-    return label ?? "UNKNOWN";
+    return label ?? UNKNOWN
   }
 
   /**
@@ -1849,7 +1853,7 @@ public trace(msg: string, extraFields?: LogEventExtraFields): void {
    * ```
    */
   public static clearInstance(): void {
-    LoggerImpl._instance = null; // Force full re-init
+    LoggerImpl._instance = null // Force full re-init
   }
   // #TEST-ONLY-END
 
@@ -1912,7 +1916,7 @@ private log(msg: string, type: LOG_EVENT, extraFields?: LogEventExtraFields): vo
   private static initIfNeeded(context?: string): void {
     const PREFIX = context ? `[${context}]: ` : `[LoggerImpl.initIfNeeded]: `
     if (!LoggerImpl._instance) {
-      LoggerImpl._instance = LoggerImpl.getInstance();
+      LoggerImpl._instance = LoggerImpl.getInstance()
       const LEVEL_LABEL = `Logger.LEVEL.${LoggerImpl.getLevelLabel()}`
       const ACTION_LABEL = `Logger.ACTION.${LoggerImpl.getActionLabel()}`
       const MSG = `${PREFIX}Logger instantiated via Lazy initialization with default parameters (level='${LEVEL_LABEL}', action='${ACTION_LABEL}')`
