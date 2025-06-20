@@ -18,18 +18,23 @@
     "yn": "^3.1.1"
   },
   "devDependencies": {
+    "jsdoc": "^4.0.4",
     "prettier": "^3.5.3",
     "strip-code": "^1.1.0",
     "ts-node": "^10.9.2",
+    "typedoc": "^0.28.5",
+    "typedoc-theme-hierarchy": "^6.0.0",
     "typescript": "^5.8.3"
   },
   "scripts": {
     "setup": "npm install && npx tsc --init",
     "build": "npm run copy:ts && npm run strip:testonly",
-    "copy:ts": "mkdir -p dist && find src/ -name \"*.ts\" -exec cp --parents {} dist/ \\;",
-    "strip:testonly": "find dist/ -name \"*.ts\" -exec sed -i '/#TEST-ONLY-START/,/#TEST-ONLY-END/d' {} +",
+    "copy:ts": "mkdir -p dist && rsync -av --include='*/' --include='*.ts' --exclude='*' src/ dist/",
+    "strip:testonly": "find dist/ -name \"*.ts\" -exec sed -i '' '/#TEST-ONLY-START/,/#TEST-ONLY-END/d' {} +",
     "test": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts",
-    "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug"
+    "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug",
+    "doc:tsdoc:install": "npm install --save-dev typedoc",
+    "doc:tsdoc:run": "npx typedoc src/logger.ts --out docs/typedoc --readme none --tsconfig tsconfig.json --theme default"
   },
   "keywords": [
     "office-scripts",
@@ -42,5 +47,5 @@
     "structured-logging"
   ],
   "author": "David Leal <dleal67@gmail.com>",
-  "license": "GPL-3.0-or-later"
+  "license": "MIT"
 }
