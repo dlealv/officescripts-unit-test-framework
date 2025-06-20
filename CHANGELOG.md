@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [2.0.0] – 2025-06-15
+## [2.0.0] – 2025-06-19
 
 ### Added
 - **AssertionError**: Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Standardized the output of `toString()` methods** for classes based on best practices. This includes consistent formatting, clear use of public property names, and structured output to improve debugging and testing.  
   Reference: [Best Practices for toString() in JavaScript/TypeScript](https://stackoverflow.com/questions/65358186/best-practices-for-tostring-in-javascript-typescript)
 - **Extended the `LogEvent` interface to support a generic type parameter** for custom extra fields, allowing flexible extension of log event metadata. Adjusted the interfaces and the rest of the classes to allow log event with extra parameters.
+- **Change license from GNU to MIT**: Updated the `LICENSE` file.
 
 
 ### Breaking
