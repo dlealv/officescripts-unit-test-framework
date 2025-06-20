@@ -1,9 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "rootDir": ".",
-    "sourceMap": true
+    "module": "commonjs", // Use CommonJS for widest compatibility in Node test runs
+    "rootDir": "."        // All code in project root/subdirs, not just src
   },
   "include": [
     "src/**/*",

@@ -9,8 +9,8 @@
  *
  * @remarks See the documentation for the Assert and TestRunner classes for assertion details and test execution control.
  * author David Leal
- * date 2025-06-03
- * version 1.2.0
+ * date 2025-06-03 (creation date)
+ * version 2.0.0
  */
 
 /**

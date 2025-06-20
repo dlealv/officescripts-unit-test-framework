@@ -352,8 +352,9 @@ This framework is designed so that the log message layout and log event factory 
 
 ## Additional Information
 
-- For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) if available.
-- JSDOC documentation: [JSDOC](docs/typedoc/index.html)
+- For developer setup, testing, or CI details, see [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md)
+- For debug setup, see [VSCode Debugging.md](docs/VSCode%20Debugging.md)
+- TypeDoc documentation: [TYPEDOC](docs/typedoc/index.html)
 
 ## License
 

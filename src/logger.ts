@@ -32,8 +32,8 @@
  * ```
  * @remarks Designed and tested for Office Scripts runtime. Extendable with custom appenders via the 'Appender' interface.
  * @author David Leal
- * version 1.2.0
- * date 2025-06-03
+ * version 2.0.0
+ * creation date: 2024-10-01
  */
 
 
@@ -1017,7 +1017,6 @@ abstract class AbstractAppender implements Appender {
   /**
  * Send the event to the appropriate destination.
  * @param event - The log event to be sent.
- * @param context - (Optional) A string to provide additional context in case of an error.
  * @throws ScriptError if 
  *         - The event is not a valid LogEvent.
  * @remarks
@@ -1131,6 +1130,7 @@ class ConsoleAppender extends AbstractAppender implements Appender {
    * @throws ScriptError if 
    *          The event is not a valid LogEvent.
    *          The instance is not available (not instantiated).
+   * @override
    */
   protected sendEvent(event: LogEvent, context?: string): void {
     const CTX = context ? context : `${this.constructor.name}.sendEvent`

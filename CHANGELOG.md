@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **New interfaces and types**: Introduced `Logger`, `Layout`, and `LogEvent` interfaces, as well as the `LogEventFactory` type, to enhance extensibility and type safety (`logger.ts`).
 - **New classes**: Added `LoggerImpl`, `Utility`, `LayoutImpl`, `LogEventImpl` (`logger.ts`), and `AssertionError` (`unit-test-framework.ts`) to provide a more modular, extensible, and testable architecture.
 - **Layout-based output customization**: Appenders now support customizable log message layouts via the `Layout` interface, which exposes a `format` method. The `LayoutImpl` class allows further customization by accepting a user-defined `formatter` function through its constructor, giving users complete control over log message formatting.
+- **`VSCode Debuggins.md`**: Detail documentation on how to debug the library while running tests.
 
 ### Changed
 - **Logger refactored**: The `Logger` is now an interface, implemented by the new `LoggerImpl` class. Common helper and validation methods have been moved to the `Utility` class for broader reuse.
@@ -25,7 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **ScriptError improvement**: Improved the `ScriptError.raiseIfNeeded` helper method to support custom error handling scenarios.
 - **Standardized the output of `toString()` methods** for classes based on best practices. This includes consistent formatting, clear use of public property names, and structured output to improve debugging and testing.  
   Reference: [Best Practices for toString() in JavaScript/TypeScript](https://stackoverflow.com/questions/65358186/best-practices-for-tostring-in-javascript-typescript)
-- **Extended the `LogEvent` interface to support a generic type parameter** for custom extra fields, allowing flexible extension of log event metadata.
+- **Extended the `LogEvent` interface to support a generic type parameter** for custom extra fields, allowing flexible extension of log event metadata. Adjusted the interfaces and the rest of the classes to allow log event with extra parameters.
 
 
 ### Breaking
