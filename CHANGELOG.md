@@ -7,13 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## [Unreleased]
+### Changes
+- **`ExcelAppender`**: Now getInstance instead of getting as input the differen font colors, the user can enter a map of colors. The default color map is now public, so the user can use it as a reference to set, chagne any of the colors.
 
 ---
 
 ## [2.0.0] – 2025-06-19
 
 ### Added
-- **AssertionError**: Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
+- **`AssertionError**`:** Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
 - **Assert enhancements**: Added new convenience methods to the `Assert` class, making test writing more robust and expressive (`unit-test-framework.ts`).
 - **New interfaces and types**: Introduced `Logger`, `Layout`, and `LogEvent` interfaces, as well as the `LogEventFactory` type, to enhance extensibility and type safety (`logger.ts`).
 - **New classes**: Added `LoggerImpl`, `Utility`, `LayoutImpl`, `LogEventImpl` (`logger.ts`), and `AssertionError` (`unit-test-framework.ts`) to provide a more modular, extensible, and testable architecture.

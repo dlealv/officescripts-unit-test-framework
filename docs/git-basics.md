@@ -24,9 +24,10 @@ git status              # Show status of changes
 - **Stagging**: Moves changes from your working directory to the staging area, preparing them for the next commit
 - **Committing**: Captures a snapshot of the currently staged changes and records them in the local repository
 ```bash
-git add <file>          # Stage a specific file
-git add .               # Stage all files
-git commit -m "Message" # Commit staged changes
+git add <file>                              # Stage a specific file
+git add .                                   # Stage all files
+git commit -m "Message"                     # Commit staged changes
+git commit --allow-empty -m "Message"       # A commit with no changes
 ```
 
 ## 5. Viewing History

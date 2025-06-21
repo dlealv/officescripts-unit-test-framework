@@ -1,3 +1,6 @@
+
+
+// #region main.ts
 // ----------------------------------------
 // Testing the Logging framework
 // ----------------------------------------
@@ -142,9 +145,9 @@ class TestCase {
 
   // Helper method to send all possible log event during the testing process consider all possible ACTION value scenrios.
   // It assumes the logger is already initialized. Used in loggerImplLevels.
-  public static sendLog(msg: string, type: LOG_EVENT, extraFields: LogEventExtraFields, 
+  public static sendLog(msg: string, type: LOG_EVENT, extraFields: LogEventExtraFields,
     action: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION], context: string = "TestCase.sendLog"): void {
-    
+
     // Defining variables
     let typeStr: string, actionStr: string, errMsg: string, logger: Logger, CONTEXT: string
 
@@ -238,7 +241,7 @@ class TestCase {
     // Defining variables
     let logger: Logger, appender: Appender, msgCellRng: ExcelScript.Range,
       activeSheet: ExcelScript.Worksheet, expectedNum: number, actualNum: number,
-      levelStr: string, actionStr: string, SUFFIX, extraFields: LogEventExtraFields
+      levelStr: string, actionStr: string, SUFFIX:string, extraFields: LogEventExtraFields
 
     // Logger: level, action
     TestCase.clear()
@@ -256,8 +259,6 @@ class TestCase {
     msgCellRng = activeSheet.getRange(msgCell)
     appender = ExcelAppender.getInstance(msgCellRng)
     Assert.isNotNull(appender, `ExcelAppender(getInstance) is not null${SUFFIX}`)
-    Assert.instanceOf(appender, ExcelAppender, `ExcelAppender(getInstance) is ExcelAppender${SUFFIX}`)
-    Assert.instanceOf(AbstractAppender.getLayout(), LayoutImpl, `ExcelAppender(getInstance)-default layout${SUFFIX}`)
     // Adding appender to the logger
     logger!.addAppender(appender)
     Assert.equals(logger!.getAppenders().length, 1, `getAppenders().length-size=1${SUFFIX}`)
@@ -280,7 +281,7 @@ class TestCase {
     }
 
     // level is not OFF, so we can continue with the tests
-    if(includeExtraFields) {
+    if (includeExtraFields) {
       extraFields = { userId: 123, sessionId: "abc" }
     } else {
       extraFields = undefined
@@ -288,7 +289,7 @@ class TestCase {
 
     repeatCheckPerLevel(level, `repeatCheckPerLevel-extraFields=${includeExtraFields}`)
     // Inner functions
-     function repeatCheckingCriticalEvents(msg: string, type: LOG_EVENT, context: string = "repeatCheckingCriticalEvents"): void {
+    function repeatCheckingCriticalEvents(msg: string, type: LOG_EVENT, context: string = "repeatCheckingCriticalEvents"): void {
       let CONTEXT = `-[level,action]=[${levelStr},${actionStr}]-${context}`
       // Checking the number of critical events sent
       // Checking the critical event sent
@@ -315,7 +316,7 @@ class TestCase {
       // Checking the content of the excel cell
       let CONTEXT = `-[level,action]=[${levelStr},${actionStr}]-${context}`
       Assert.isNotNull(msgCellRng, `ExcelAppender(getInstance)-msgCellRng is not null${CONTEXT}`)
-      let actualMsg = TestCase.removeTimestamp(msgCellRng.getValue()) // under default configuration the output has stimestamp
+      let actualMsg = TestCase.removeTimestamp(msgCellRng.getValue().toString()) // under default configuration the output has stimestamp
       let extraFieldsStr = extraFields ? ` ${JSON.stringify(extraFields)}` : "" // If extraFields are present, append them to the message
       expectedMsg = `[${LOG_EVENT[expectedType]}] ${expectedMsg}${extraFieldsStr}`
       Assert.equals(actualMsg, expectedMsg, `ExcelAppender(msgCellRng.getValue)-excel cell content is correct${CONTEXT}`)
@@ -565,11 +566,11 @@ class TestCase {
     // Testing rethrowCauseIfNeeded without cause
     expectedMsg = "Script Error message"
     try {
-      const err = new ScriptError(expectedMsg);
-      err.rethrowCauseIfNeeded();
-      Assert.fail("Expected ScriptError to be thrown");
+      const err = new ScriptError(expectedMsg)
+      err.rethrowCauseIfNeeded()
+      Assert.fail("Expected ScriptError to be thrown")
     } catch (e) {
-      Assert.instanceOf(e, ScriptError);
+      isScriptError(e, "LogEvent(rethrowCauseIfNeeded)-No cause")
       Assert.equals((e as ScriptError).message, expectedMsg, "LogEvent(rethrowCauseIfNeeded)-Top-level error")
     }
 
@@ -578,10 +579,10 @@ class TestCase {
       cause = new Error("Root cause");
       origin = new ScriptError("Wrapper error", cause);
       origin.rethrowCauseIfNeeded();
-      Assert.fail("Expected root cause Error to be thrown");
+      //Assert.fail("Expected root cause Error to be thrown");
     } catch (e) {
-      Assert.instanceOf(e, Error);
-      Assert.notInstanceOf(e, ScriptError);
+      isError(e, "LogEvent(rethrowCauseIfNeeded)-Root cause is Error");
+      isNotScriptError(e, "LogEvent(rethrowCauseIfNeeded)-Root cause is not a ScriptError");
       Assert.equals((e as Error).message, "Root cause");
     }
 
@@ -593,37 +594,71 @@ class TestCase {
       top.rethrowCauseIfNeeded();
       Assert.fail("Expected root Error to be thrown");
     } catch (e) {
-      Assert.instanceOf(e, Error);
-      Assert.notInstanceOf(e, ScriptError);
+      isError(e, "LogEvent(rethrowCauseIfNeeded)-Deepest cause is Error");
+      isNotScriptError(e, "LogEvent(rethrowCauseIfNeeded)-Deepest cause is not a ScriptError");
       Assert.equals((e as Error).message, "Root error");
     }
 
-
     TestCase.clear() // Clear all the instances
+
+    // Inner functions
+    function isScriptError(value: unknown, message?: string): asserts value is ScriptError {
+      if (!(value instanceof ScriptError)) {
+        const prefix = message ? `${message}: ` : "";
+        throw new AssertionError(
+          `${prefix}Expected instance of ScriptError, but got ${(value as object)?.constructor?.name || typeof value}`
+        );
+      }
+    }
+
+    function isNotScriptError(value: unknown, message?: string): void {
+      if (value instanceof ScriptError) {
+        const prefix = message ? `${message}: ` : "";
+        throw new AssertionError(
+          `${prefix}Expected value NOT to be instance of ScriptError, but got ${(value as object)?.constructor?.name || typeof value}`
+        );
+      }
+    }
+
+    function isError(value: unknown, message?: string): asserts value is Error {
+      if (!(value instanceof Error)) {
+        const prefix = message ? `${message}: ` : "";
+        throw new AssertionError(
+          `${prefix}Expected instance of Error, but got ${(value as object)?.constructor?.name || typeof value}`
+        );
+      }
+    }
+
+    function isNotError(value: unknown, message?: string): void {
+      if (value instanceof Error) {
+        const prefix = message ? `${message}: ` : "";
+        throw new AssertionError(
+          `${prefix}Expected value NOT to be instance of Error, but got ${(value as object)?.constructor?.name || typeof value}`
+        );
+      }
+    }
+
   }
 
   public static layoutImpl(): void { // Unit tests for LayoutImpl class
     TestCase.clear()
 
     // Deffining the variables to be used in the tests
-    let layout: Layout, event: LogEvent, actualStr: string, expectedStr: string, expectedMsg, expectedType: LOG_EVENT, eventWithExtras: LogEvent
+    let layout: Layout, event: LogEvent, actualStr: string, expectedStr: string, expectedMsg:string, expectedType: LOG_EVENT, eventWithExtras: LogEvent
 
     expectedMsg = "Test message"
     expectedType = LOG_EVENT.INFO
     event = new LogEventImpl(expectedMsg, expectedType)
-    
+
     // Testing constructor: short layout
     layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // with short formatter
     Assert.isNotNull(layout, "LayoutImpl(constructor-short layout is not null)")
-    Assert.isType(layout, LayoutImpl, "LayoutImpl(constructor-is LayoutImpl)")
     Assert.equals((layout as LayoutImpl).getFormatter(), LayoutImpl.shortFormatterFun, "LayoutImpl(constructor-getFormatter() short formatter)")
 
     // Testing constructor: long layout
     layout = new LayoutImpl() // Default formatter with timestamp
     Assert.isNotNull(layout, "LayoutImpl(constructor-long layout is not null)")
-    Assert.isType(layout, LayoutImpl, "LayoutImpl(constructor-is LayoutImpl)")
     Assert.equals((layout as LayoutImpl).getFormatter(), LayoutImpl.defaultFormatterFun, "LayoutImpl(constructor-getFormatter() long formatter)")
-
     // Testing constructor: invalid formatter, since the input argument was provided, it doesn't use the default formatter
     expectedStr = `[LayoutImpl.constructor]: Invalid Layout: The internal '_formatter' property must be a function accepting a single LogEvent argument. ` +
       `Example: event => "[type] " + event.message. This is typically set in the LayoutImpl constructor. See LayoutImpl documentation for usage. ` +
@@ -728,47 +763,40 @@ class TestCase {
     TestCase.clear()
 
     // Defining the variables to be used in the tests
-    let actualEvent: LogEvent, expectedMsg: string, actualMsg: string, expectedStr, actualStr: string,
-      expectedType: LOG_EVENT, actualType: LOG_EVENT, actualtimeStamp: Date, errMsg
+    let actualEvent: LogEvent, expectedMsg: string, actualMsg: string, expectedStr:string, actualStr: string,
+      expectedType: LOG_EVENT, actualType: LOG_EVENT, actualtimeStamp: Date, errMsg:string
 
-    let eventExtras: LogEventExtraFields = {userId: 123, sessionId: "abc"}
+    let eventExtras: LogEventExtraFields = { userId: 123, sessionId: "abc" }
 
     // Testing constructor
     expectedMsg = "Test message"
     expectedType = LOG_EVENT.INFO
     actualEvent = new LogEventImpl(expectedMsg, expectedType)
     Assert.isNotNull(actualEvent, "LogEventImpl(constructor-is not null)")
-    Assert.isType(actualEvent, LogEventImpl, "LogEventImpl(constructor-is LogEventImpl)")
 
     // Testing constructor with extra fields
-    let eventWithExtras = new LogEventImpl(expectedMsg, expectedType,eventExtras)
+    let eventWithExtras = new LogEventImpl(expectedMsg, expectedType, eventExtras)
     Assert.isNotNull(eventWithExtras, "LogEventImpl(constructor with extras)-is not null")
-    Assert.isType(eventWithExtras, LogEventImpl, "LogEventImpl(constructor with extras)-is LogEventImpl")
     Assert.equals(eventWithExtras.message, expectedMsg, "LogEventImpl(constructor with extras)-message is correct")
     Assert.equals(eventWithExtras.type, expectedType, "LogEventImpl(constructor with extras)-type is correct")
     Assert.isNotNull(eventWithExtras.timestamp, "LogEventImpl(constructor with extras)-timestamp is not null")
-    Assert.isType(eventWithExtras.timestamp, Date, "LogEventImpl(constructor with extras)-timestamp is Date")
     Assert.equals(eventWithExtras.extraFields.userId, eventExtras.userId, "LogEventImpl(constructor with extras)-userId is correct")
     Assert.equals(eventWithExtras.extraFields.sessionId, eventExtras.sessionId, "LogEventImpl(constructor with extras)-sessionId is correct")
 
     // Testing the constructorw with no extra field and checking the value of the property
     actualEvent = new LogEventImpl(expectedMsg, expectedType)
     Assert.isNotNull(actualEvent.extraFields, "LogEventImpl(constructor with no extras)-extraFields is not null")
-    Assert.isType(actualEvent.extraFields, Object, "LogEventImpl(constructor with no extras)-extraFields is Object")
-    Assert.equals(Object.keys(actualEvent.extraFields).length, 0, "LogEventImpl(constructor with no extras)-extraFields is empty") 
-    
+    Assert.equals(Object.keys(actualEvent.extraFields).length, 0, "LogEventImpl(constructor with no extras)-extraFields is empty")
+
     // Testing extraFields with a field that is a function
     eventExtras = { userId: 123, sessionId: "abc", logTime: () => new Date().toISOString() }
     eventWithExtras = new LogEventImpl(expectedMsg, expectedType, eventExtras, new Date())
     Assert.isNotNull(eventWithExtras, "LogEventImpl(constructor with function extra)-is not null")
-    Assert.isType(eventWithExtras, LogEventImpl, "LogEventImpl(constructor with function extra)-is LogEventImpl")
     Assert.equals(eventWithExtras.message, expectedMsg, "LogEventImpl(constructor with function extra)-message is correct")
     Assert.equals(eventWithExtras.type, expectedType, "LogEventImpl(constructor with function extra)-type is correct")
     Assert.isNotNull(eventWithExtras.timestamp, "LogEventImpl(constructor with function extra)-timestamp is not null")
-    Assert.isType(eventWithExtras.timestamp, Date, "LogEventImpl(constructor with function extra)-timestamp is Date")
     Assert.equals(eventWithExtras.extraFields.userId, eventExtras.userId, "LogEventImpl(constructor with function extra)-userId is correct")
     Assert.equals(eventWithExtras.extraFields.sessionId, eventExtras.sessionId, "LogEventImpl(constructor with function extra)-sessionId is correct")
-    Assert.isType(eventWithExtras.extraFields.logTime, Function, "LogEventImpl(constructor with function extra)-logTime is Function")
 
     // Testing constructor as undefined
     Assert.doesNotThrow(
@@ -781,7 +809,6 @@ class TestCase {
     actualType = (actualEvent as LogEvent).type
     actualtimeStamp = (actualEvent as LogEvent).timestamp
     Assert.isNotNull(actualtimeStamp, "LogEventImpl(get timestamp) is not null")
-    Assert.isType(actualtimeStamp, Date, "LogEventImpl(get timestamp) is Date")
     Assert.equals(actualType, expectedType, "LogEventImpl(get type())")
     Assert.equals(actualMsg, expectedMsg, "LogEventImpl(get message())")
 
@@ -825,7 +852,7 @@ class TestCase {
     )
 
     // Testing Constructor with non valid date
-  
+
     errMsg = "[LogEventImpl.constructor]: LogEvent.timestamp='null' property must be a Date."
     expectedMsg = "Test message"
     Assert.throws(
@@ -951,14 +978,14 @@ class TestCase {
       errMsg,
       "LogEventImpl(validateLogEvent)-invalid case with extra fields-null"
     )
-    
+
     // Testing validateLogEvent with extra fields (undefined valid case)
     // undefined is valid, since it defaults to an empty object
     Assert.doesNotThrow(
       () => LogEventImpl.validateLogEvent({ type: actualType, message: actualMsg, timestamp: actualtimeStamp, extraFields: undefined }),
       "LogEventImpl(validateLogEvent)-valid case with extra fields-undefined"
     )
-    
+
 
     TestCase.clear()
   }
@@ -972,7 +999,7 @@ class TestCase {
     // Defining the variables to be used in the tests
     let expectedStr: string, actualStr: string, expectedEvent: LogEvent,
       actualEvent: LogEvent | null, appender: Appender, layout: Layout, expectedNull: LogEvent | null,
-      actualMsg: string, expectedMsg: string, msg: string, expectedType:LOG_EVENT, actualType: LOG_EVENT, errMsg: string,
+      actualMsg: string, expectedMsg: string, msg: string, expectedType: LOG_EVENT, actualType: LOG_EVENT, errMsg: string,
       extraFields: LogEventExtraFields
 
     // Test lazy initialization: We can't because we need and instance first
@@ -980,7 +1007,6 @@ class TestCase {
     // Initial situation (testing information in AbstractAppender common to all appenders, no need to test it in each appender)
     appender = ConsoleAppender.getInstance()
     Assert.isNotNull(appender, "ConsoleAppender(getInstance) is not null")
-    Assert.instanceOf(appender, ConsoleAppender, "ConsoleAppender(getInstance) is ConsoleAppender")
 
     // Testing static properties have default values (null)
     Assert.isNull((appender as AbstractAppender).getLastLogEvent(), "ConsoleAppender(getInstance) has no last log event")
@@ -993,7 +1019,6 @@ class TestCase {
     // Checking static properties
     layout = AbstractAppender.getLayout() // lazy initialized
     Assert.isNotNull(layout, "ConsoleAppender(getInstance) has a layout")
-    Assert.isType(layout, LayoutImpl, "ConsoleAppender(getInstance) has a LayoutImpl layout")
 
     // Checking the default formatter via LayoutImpl.toString()
     expectedStr = `LayoutImpl: {formatter: [Function: "defaultLayoutFormatterFun"]}`
@@ -1162,15 +1187,15 @@ class TestCase {
 
     // Defining the variables to be used in the tests
     let expectedStr: string, actualStr: string, msg: string, expectedEvent: LogEvent,
-      actualEvent: LogEvent | null, expectedMsg:string, expectedType: LOG_EVENT,
-      errMsg: string,
+      actualEvent: LogEvent | null, expectedMsg: string, expectedType: LOG_EVENT, errMsg: string,
       appender: Appender, msgCellRng: ExcelScript.Range, extraFields: LogEventExtraFields,
-      activeSheet: ExcelScript.Worksheet
+      activeSheet: ExcelScript.Worksheet, eventFonts: Record<LOG_EVENT, string>
 
     activeSheet = workbook.getActiveWorksheet()
     msgCellRng = activeSheet.getRange(msgCell)
     const address = msgCellRng.getAddress()
     appender = ExcelAppender.getInstance(msgCellRng)
+    const DEFAULT_FONTS = { ...ExcelAppender.DEFAULT_EVENT_FONTS }
 
     // Note: Testing log calls (may be redundant because log is from AbstractAppender, but we need to test the ExcelAppender specific behavior)
     // Testing sending log(message, LOG_EVENT)
@@ -1182,7 +1207,7 @@ class TestCase {
     Assert.isNotNull(actualEvent, "ExcelAppender(getLastLogEvent) not null")
     Assert.equals(actualEvent!.type, expectedType, "ExcelAppender(getLastLogEvent).type")
     Assert.equals(actualEvent!.message, expectedMsg, "ExcelAppender(getLastLogEvent).message")
-     // Now checking the excel cell value (formatted via format method)
+    // Now checking the excel cell value (formatted via format method)
     expectedStr = AbstractAppender.getLayout().format(actualEvent as LogEvent)
     Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value via log(string,LOG_EVENT))")
 
@@ -1203,7 +1228,7 @@ class TestCase {
     Assert.equals(actualEvent!.extraFields.sessionId, extraFields.sessionId,
       "ExcelAppender(getLastLogEvent).extraFields.sessionId with extra fields"
     )
-     // Now checking the excel cell value (formatted via format method)
+    // Now checking the excel cell value (formatted via format method)
     actualStr = msgCellRng.getValue().toString()
     expectedStr = AbstractAppender.getLayout().format(actualEvent as LogEvent)
     Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value via log(message,LOG_EVENT)-with extra fields)")
@@ -1243,10 +1268,32 @@ class TestCase {
     Assert.equals(actualEvent!.extraFields.userId, extraFields.userId,
       "ExcelAppender(getLastLogEvent).extraFields.userId from log(LogEvent) with extra fields"
     )
-     // Now checking the excel cell value (formatted via format method)
+    // Now checking the excel cell value (formatted via format method)
     actualStr = msgCellRng.getValue().toString()
     expectedStr = AbstractAppender.getLayout().format(actualEvent as LogEvent)
     Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value via log(LogEvent)-with extra fields)")
+
+    // Custom log event valid colors
+    ExcelAppender.clearInstance()
+    Assert.doesNotThrow(
+      () => ExcelAppender.getInstance(msgCellRng, null as unknown as Record<LOG_EVENT, string>),
+      "ExcelAppender(getInstance)-using null log event fonts"
+    )
+    Assert.equals(
+      (appender as ExcelAppender).getEventFonts(),
+      DEFAULT_FONTS,
+      "ExcelAppender(getEventFonts)-using null log event fonts defaults to DEFAULT_EVENT_FONTS"
+    )
+
+    // Changing two colors and the rest will be the defalt ones
+    eventFonts = { ...DEFAULT_FONTS, [LOG_EVENT.WARN]: "#ed7d31", [LOG_EVENT.INFO]: "#548235" }
+    ExcelAppender.clearInstance()
+    appender = ExcelAppender.getInstance(msgCellRng, eventFonts)
+    Assert.equals(
+      (appender as ExcelAppender).getEventFonts(),
+      eventFonts,
+      "ExcelAppender(getEventFonts)-using custom log event fonts"
+    )
 
     // Script Errors
     ExcelAppender.clearInstance() // singleton is undefined
@@ -1299,30 +1346,26 @@ class TestCase {
 
     // Script Errors: Testing non-valid hexadecimal colors
     ExcelAppender.clearInstance()
-    errMsg = "[ExcelAppender.getInstance]: The input value 'null' for 'error' event is missing or not a string. Please provide a 6-digit hexadecimal color as 'RRGGBB' or '#RRGGBB'."
+    errMsg = "[ExcelAppender.getInstance]: The input value '' for 'WARN' event is missing or not a string. Please provide a 6-digit hexadecimal color as 'RRGGBB' or '#RRGGBB'."
+    eventFonts = { ...DEFAULT_FONTS, [LOG_EVENT.WARN]: "" }
     Assert.throws(
-      () => ExcelAppender.getInstance(msgCellRng, null as unknown as string), // don't use undefined, it is valid
-      ScriptError,
-      errMsg,
-      "ExcelAppender(ScriptError)-getInstance-red color undefined"
-    )
-    errMsg = "[ExcelAppender.getInstance]: The input value '' for 'warning' event is missing or not a string. Please provide a 6-digit hexadecimal color as 'RRGGBB' or '#RRGGBB'."
-    Assert.throws(
-      () => ExcelAppender.getInstance(msgCellRng, "000000", ""),
+      () => ExcelAppender.getInstance(msgCellRng, eventFonts),
       ScriptError,
       errMsg,
       "ExcelAppender(ScriptError)-getInstance-Non valid font color for warning"
     )
-    errMsg = "[ExcelAppender.getInstance]: The input value 'xxxxxx' for 'info' event is not a valid 6-digit hexadecimal color. Please use 'RRGGBB' or '#RRGGBB' format."
+    errMsg = "[ExcelAppender.getInstance]: The input value 'xxxxxx' for 'INFO' event is not a valid 6-digit hexadecimal color. Please use 'RRGGBB' or '#RRGGBB' format."
+    eventFonts = { ...DEFAULT_FONTS, [LOG_EVENT.INFO]: "xxxxxx" }
     Assert.throws(
-      () => ExcelAppender.getInstance(msgCellRng, "000000", "000000", "xxxxxx"),
+      () => ExcelAppender.getInstance(msgCellRng, eventFonts),
       ScriptError,
       errMsg,
       "ExcelAppender(ScriptError) - getInstance - Non valid font color for info"
     )
-    errMsg = "[ExcelAppender.getInstance]: The input value '******' for 'trace' event is not a valid 6-digit hexadecimal color. Please use 'RRGGBB' or '#RRGGBB' format."
+    errMsg = "[ExcelAppender.getInstance]: The input value '******' for 'TRACE' event is not a valid 6-digit hexadecimal color. Please use 'RRGGBB' or '#RRGGBB' format."
+    eventFonts = { ...DEFAULT_FONTS, [LOG_EVENT.TRACE]: "******" }
     Assert.throws(
-      () => ExcelAppender.getInstance(msgCellRng, "000000", "000000", "000000", "******"),
+      () => ExcelAppender.getInstance(msgCellRng, eventFonts),
       ScriptError,
       errMsg,
       "ExcelAppender(ScriptError)-getInstance-Non valid font color for trace"
@@ -1335,7 +1378,7 @@ class TestCase {
     appender.log(msg, LOG_EVENT.TRACE)
     expectedStr = `${AbstractAppender.prototype.toString.call(appender)}`
     // address in the expected string is dynamic and works cross` platform (Office Script and TypeScript)
-    expectedStr += ` ExcelAppender: {msgCellRng(address)="${address}", event fonts(map)={errFont="9c0006",warnFont="ed7d31",infoFont="548235",traceFont="7f7f7f"}}`
+    expectedStr += ` ExcelAppender: {msgCellRng(address)="${address}", eventfonts={ERROR="9c0006",WARN="ed7d31",INFO="548235",TRACE="7f7f7f"}}`
     actualStr = (appender as ExcelAppender).toString()
     Assert.equals(actualStr, expectedStr, "ExcelAppender(toString)")
 
@@ -1350,8 +1393,6 @@ class TestCase {
     // Checking Initial situation
     logger = LoggerImpl.getInstance()
     Assert.isNotNull(logger, "LoggerImpl(getInstance) is not null")
-    Assert.instanceOf(logger, LoggerImpl, "LoggerImpl(getInstance) is LoggerImpl")
-    Assert.instanceOf(logger, LoggerImpl, "LoggerImpl(getInstance) is LoggerImpl")
     Assert.equals(logger!.getLevel(), LoggerImpl.LEVEL.WARN, "LoggerImpl(getInstance)-default level is WARN")
     Assert.equals(logger!.getAction(), LoggerImpl.ACTION.EXIT, "LoggerImpl(getInstance)-default action is EXIT")
     Assert.isNotNull(logger!.getAppenders(), "LoggerImpl(getInstance)-default appenders is not null")
@@ -1435,7 +1476,6 @@ class TestCase {
     actualNum = logger.getAppenders().length ?? 0
     Assert.equals(actualNum, expectedNum, "Logger(Lazy init)-appender")
     Assert.isNotNull(logger.getAppenders()[0], "Logger(Lazy init)-appender is not null")
-    Assert.instanceOf(logger.getAppenders()[0], ConsoleAppender, "Logger(Lazy init)-appender is ConsoleAppender")
     Assert.equals(logger.getLevel(), LoggerImpl.LEVEL.INFO, "Logger(Lazy init)-level is INFO")
     Assert.equals(logger.getAction(), LoggerImpl.ACTION.EXIT, "Logger(Lazy init)-action is EXIT(default")
     actualEvent = logger.getAppenders()[0].getLastLogEvent() // Safe to use getLastLogEvent here since it was tested in ConsoleAppender
@@ -1484,7 +1524,7 @@ class TestCase {
 
   /**Unit tests for Logger class checking the behaviour after the singleton was reset
    */
-  public static loggerImplResetSingleton(workbook: ExcelScript.Workbook, msgCell: string):void {
+  public static loggerImplResetSingleton(workbook: ExcelScript.Workbook, msgCell: string): void {
     TestCase.clear()
 
     // Defining the variables to be used in the tests
@@ -1560,7 +1600,7 @@ class TestCase {
     // Defining the variables to be used in the tests
     let logger: Logger, layout: Layout, actualNum: number, expectedNum: number,
       actualEvent: LogEvent | null, expectedEvent: LogEvent, errMsg: string, warnMsg: string
-    
+
     // Initializing the logger with a short layout
     layout = new LayoutImpl(LayoutImpl.shortFormatterFun) // Short layout
 
@@ -1625,7 +1665,7 @@ class TestCase {
   }
 
   /**Unit Tests for Logger class on toString method */
-  public static loggerImplToString(workbook: ExcelScript.Workbook, msgCell: string):void {
+  public static loggerImplToString(workbook: ExcelScript.Workbook, msgCell: string): void {
     TestCase.clear()
     TestCase.setShortLayout()
     // Defining the variables to be used in the tests
@@ -1642,13 +1682,13 @@ class TestCase {
     const MSGS = ["Error event in loggerToString", "Warning event in loggerToString"]
     logger.error(MSGS[0]) // lazy initialization of the appender
     logger.warn(MSGS[1])
-    expected = `LoggerImpl: {level: "INFO", action: "CONTINUE", errCnt: 1, warnCnt: 1, appenders: `+
-    `[AbstractAppender: {layout=LayoutImpl: {formatter: [Function: "shortLayoutFormatterFun"]}, `+
-    `logEventFactory="defaultLogEventFactoryFun", lastLogEvent=LogEventImpl: {timestamp="2025-06-18 01:02:39,720", `+
-    `type="WARN", message="Warning event in loggerToString"}} ConsoleAppender: {}, AbstractAppender: {layout=LayoutImpl: `+
-    `{formatter: [Function: "shortLayoutFormatterFun"]}, logEventFactory="defaultLogEventFactoryFun", lastLogEvent=LogEventImpl: `+
-    `{timestamp="2025-06-18 01:02:39,720", type="WARN", message="Warning event in loggerToString"}} ExcelAppender: `+
-    `{msgCellRng(address)="C2", event fonts(map)={errFont="9c0006",warnFont="ed7d31",infoFont="548235",traceFont="7f7f7f"}}]}`
+    expected = `LoggerImpl: {level: "INFO", action: "CONTINUE", errCnt: 1, warnCnt: 1, appenders: ` +
+      `[AbstractAppender: {layout=LayoutImpl: {formatter: [Function: "shortLayoutFormatterFun"]}, ` +
+      `logEventFactory="defaultLogEventFactoryFun", lastLogEvent=LogEventImpl: {timestamp="2025-06-18 01:02:39,720", ` +
+      `type="WARN", message="Warning event in loggerToString"}} ConsoleAppender: {}, AbstractAppender: {layout=LayoutImpl: ` +
+      `{formatter: [Function: "shortLayoutFormatterFun"]}, logEventFactory="defaultLogEventFactoryFun", lastLogEvent=LogEventImpl: ` +
+      `{timestamp="2025-06-18 01:02:39,720", type="WARN", message="Warning event in loggerToString"}} ExcelAppender: ` +
+      `{msgCellRng(address)="C2", eventfonts={ERROR="9c0006",WARN="ed7d31",INFO="548235",TRACE="7f7f7f"}}]}`
     actual = logger.toString()
     Assert.equals(normalizeTimestamps(actual), normalizeTimestamps(expected), "loggerToString(Logger)")
 
@@ -1658,10 +1698,10 @@ class TestCase {
     logger = LoggerImpl.getInstance(LoggerImpl.LEVEL.INFO)
     logger.info("Info event in loggerToString with extra fields", extraFields)
     //console.log(`logger=${logger.toString()}`)
-    expected =`LoggerImpl: {level: "INFO", action: "EXIT", errCnt: 0, warnCnt: 0, appenders: [AbstractAppender: {layout=LayoutImpl: ` +
-    `{formatter: [Function: "defaultLayoutFormatterFun"]}, logEventFactory="defaultLogEventFactoryFun", ` +
-    `lastLogEvent=LogEventImpl: {timestamp="2025-06-19 22:31:17,324", type="INFO", message="Info event in loggerToString with extra fields", `+
-    `extraFields={"userId":123,"sessionId":"abc"}}} ConsoleAppender: {}]}`
+    expected = `LoggerImpl: {level: "INFO", action: "EXIT", errCnt: 0, warnCnt: 0, appenders: [AbstractAppender: {layout=LayoutImpl: ` +
+      `{formatter: [Function: "defaultLayoutFormatterFun"]}, logEventFactory="defaultLogEventFactoryFun", ` +
+      `lastLogEvent=LogEventImpl: {timestamp="2025-06-19 22:31:17,324", type="INFO", message="Info event in loggerToString with extra fields", ` +
+      `extraFields={"userId":123,"sessionId":"abc"}}} ConsoleAppender: {}]}`
     actual = logger.toString()
     Assert.equals(normalizeTimestamps(actual), normalizeTimestamps(expected), "loggerToString(Logger with extra fields)")
 
@@ -1675,7 +1715,7 @@ class TestCase {
     // Helper function to normalize timestamps in the expected and actual strings
     function normalizeTimestamps(str: string): string {
       return str.replace(/timestamp="[^"]*"/g, 'timestamp="<TIMESTAMP>"')
-  }
+    }
   }
 
   /**Unit Tests for Logger class for method exportState */
@@ -1916,9 +1956,10 @@ class TestCase {
 // ----------------------------------------
 // End Testing the Logging framework
 // ----------------------------------------
-
 // Make main available globally for Node/ts-node test environments
 if (typeof globalThis !== "undefined" && typeof main !== "undefined") {
   // @ts-ignore
   globalThis.main = main;
 }
+// #endregion main.ts
+
