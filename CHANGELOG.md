@@ -5,15 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [2.1.0] – 2025-06-26
 
-## [Unreleased]
+### Added
+- **`ExcelAppender` color map support**: The `getInstance` method now accepts a color map, allowing users to specify custom font colors for different log levels. The default color map is exposed as a public property, enabling users to reference or modify it for their own configurations.
+- **Additional documentation**: Added `git-basics.md`, providing concise, project-specific instructions and best practices for using Git effectively within this repository.
+
+### Changed
+- Ensured cross-platform compatibility: Adjustments were made to guarantee the framework works in both Node.js/TypeScript and Office Scripts environments. To pass all tests, `setTimeout` was used in some cases to handle the asynchronous nature of Office Scripts.
+- **VSCode configuration improvements**: The project now uses a dedicated `types` folder to include all `*.d.ts` files, such as Office Scripts declarations and global variable definitions. This streamlines type management and ensures accurate IntelliSense and type checking within VSCode.
 
 ---
 
 ## [2.0.0] – 2025-06-19
 
 ### Added
-- **AssertionError**: Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
+- **`AssertionError**`:** Introduced a new error class for clearer assertion failure reporting in the unit test framework (`unit-test-framework.ts`).
 - **Assert enhancements**: Added new convenience methods to the `Assert` class, making test writing more robust and expressive (`unit-test-framework.ts`).
 - **New interfaces and types**: Introduced `Logger`, `Layout`, and `LogEvent` interfaces, as well as the `LogEventFactory` type, to enhance extensibility and type safety (`logger.ts`).
 - **New classes**: Added `LoggerImpl`, `Utility`, `LayoutImpl`, `LogEventImpl` (`logger.ts`), and `AssertionError` (`unit-test-framework.ts`) to provide a more modular, extensible, and testable architecture.

@@ -1,4 +1,3 @@
-// office-scripts.d.ts
 //
 // - Declares a minimal subset of the Office Scripts ExcelScript namespace for use in local development and testing.
 // - This file provides enough typing to write and test scripts that interact with Excel ranges, worksheets, and workbooks.

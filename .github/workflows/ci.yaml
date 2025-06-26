@@ -1,10 +1,9 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build-and-test:
@@ -26,4 +25,4 @@ jobs:
         run: npm run build
 
       - name: Run tests (local Node.js + mocks)
-        run: npm test 
+        run: npm test
