@@ -38,13 +38,13 @@ Logger.addAppender(ConsoleAppender.getInstance()) // Add console appender
 ## Basic Usage Examples
 
 ```typescript
-Logger.info("Script started")             // [INFO] Script started.
-Logger.warn("This might be a problem")    // [WARN] This might be a problem.
-Logger.error("A fatal error occurred")    // [ERROR] A fatal error occurred
-Logger.trace("Step-by-step details")      // [TRACE] Step-by-step details
+Logger.info("Script started")             // [2025-06-25 23:41:10,585] [INFO] Script started.
+Logger.warn("This might be a problem")    // [2025-06-25 23:41:10,585] [WARN] This might be a problem.
+Logger.error("A fatal error occurred")    // [2025-06-25 23:41:10,585] [ERROR] A fatal error occurred
+Logger.trace("Step-by-step details")      // [2025-06-25 23:41:10,585] [TRACE] Step-by-step details
 ```
 
-> Output as shown above uses the short layout. With the default layout, a timestamp and brackets are included.
+> Output as shown above uses the default layout. With the short layout, a timestamp and brackets are excluded.
 
 ### Logging to Excel Cell
 
@@ -57,8 +57,8 @@ function main(workbook: ExcelScript.Workbook) {
   Logger.getInstance(Logger.LEVEL.INFO, Logger.ACTION.CONTINUE)
   Logger.addAppender(ExcelAppender.getInstance(cell))
 
-  Logger.info("Log written to Excel!")    // Output in cell B1: [INFO] Log written to Excel! (green text)
-  Logger.trace("Trace event in cell")     // Output in cell B1: [TRACE] Trace event in cell (gray text)
+  Logger.info("Log written to Excel!")    // Output in cell B1: [2025-06-25 23:41:10,586] [INFO] Log written to Excel! (green text)
+  Logger.trace("Trace event in cell")     // Output in cell B1: [2025-06-25 23:41:10,586] [TRACE] Trace event in cell (gray text)
 }
 ```
 
@@ -222,6 +222,7 @@ You can pass an object with arbitrary key-value pairs as the `extrafields` argum
 
 #### Example: Adding custom fields to a log entry
 
+Following examples assumed a short layout configuration.
 ```typescript
 Logger.info("Processing started", { step: "init", user: "alice@example.com" })
 ````
@@ -297,10 +298,10 @@ function main(workbook: ExcelScript.Workbook) {
   Logger.addAppender(ExcelAppender.getInstance(logCell))
 
   // Logging (with short layout, output shown as comments):
-  Logger.info("Script started.")         // [INFO] Script started.
+  Logger.info("Script started.")           // [INFO] Script started.
   Logger.trace("This is a trace message.") // [TRACE] This is a trace message.
-  Logger.warn("This is a warning.")      // [WARN] This is a warning.
-  Logger.error("This is an error!")      // [ERROR] This is an error! (if ACTION.EXIT, aborts script)
+  Logger.warn("This is a warning.")        // [WARN] This is a warning.
+  Logger.error("This is an error!")        // [ERROR] This is an error! (if ACTION.EXIT, aborts script)
 
   // ExcelAppender outputs in cell C2:
   // [INFO] Script started.         (green text)
@@ -322,6 +323,28 @@ This framework is designed so that the log message layout and log event factory 
 - It keeps the API simple for the common use case and ensures logging behavior is stable and predictable.
 - Passing these configurations via `getInstance` would require adding extra rarely-used parameters to already overloaded constructors, making the API harder for most users.
 - If your scenario truly requires dynamic, runtime reconfiguration, you can fork the codebase or adapt it for your specific needs, but for most Office Scripts, stability is preferred.
+
+## Cross-Platform Compatibility
+
+This framework is designed to work seamlessly in both Node.js/TypeScript environments (such as VSCode) and directly within Office Scripts.
+
+- **Tested Environments:**  
+  - Node.js/TypeScript (VSCode)
+  - Office Scripts (Excel on the web)
+
+- **Usage in Office Scripts:**  
+  To use the framework in Office Scripts, paste the source files into your script in the following order:  
+  1. `test/unit-test-framework.ts`  
+  2. `src/logger.ts`  
+  3. `test/main.ts`  
+  The order matters because Office Scripts requires that all objects and functions are declared before they are used.
+
+- **Office Scripts Compatibility Adjustments:**  
+  - The code avoids unsupported keywords such as `any`, `export`, and `import`.
+  - Office Scripts does not allow calling `ExcelScript` API methods on Office objects inside class constructors; the code is structured to comply with this limitation.
+  - Additional nuances and workarounds are documented in the source code comments.
+
+This ensures the logging framework is robust and reliable across both development and production Office Scripts scenarios.
 
 ---
 
@@ -347,6 +370,26 @@ This framework is designed so that the log message layout and log event factory 
 
 - **Why can't I send a different message to different appenders?**  
   By design, all channels (appenders) receive the same log event message for consistency.
+
+- **Why am I getting unexpected results when running some tests in Office Scripts compared to Node.js/TypeScript?**  
+  This can happen because Office Scripts executes code asynchronously, which means some operations (like logging or cell updates) may not complete in strict sequence. As a result, test outcomes may differ from those in Node.js/TypeScript, which runs synchronously and flushes operations immediately.
+
+  **Workaround:**  
+  To ensure reliable test results in Office Scripts, introduce a delay or use asynchronous test helpers to wait for operations to complete before making assertions. In `test/main.ts`, the `TestCase.runTestAsync` method is used for this purpose. For example:
+
+  ```typescript
+  let actualEvent = appender.getLastLogEvent()
+  TestCase.runTestAsync(() => {
+    Assert.isNotNull(actualEvent, "ExcelAppender(getLastLogEvent) not null")
+    Assert.equals(actualEvent!.type, expectedType, "ExcelAppender(getLastLogEvent).type")
+    Assert.equals(actualEvent!.message, expectedMsg, "ExcelAppender(getLastLogEvent).message")
+    // Now checking the Excel cell value (formatted via layout)
+    let expectedStr = AbstractAppender.getLayout().format(actualEvent as LogEvent)
+    Assert.equals(actualStr, expectedStr, "ExcelAppender(cell value via log(string,LOG_EVENT))")
+  })
+  ```
+
+  By wrapping assertions in `runTestAsync`, you allow asynchronous operations to finish, making your tests more reliable across both environments.
 
 ---
 

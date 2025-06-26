@@ -5,10 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [2.1.0] – 2025-06-26
 
-## [Unreleased]
-### Changes
-- **`ExcelAppender`**: Now getInstance instead of getting as input the differen font colors, the user can enter a map of colors. The default color map is now public, so the user can use it as a reference to set, chagne any of the colors.
+### Added
+- **`ExcelAppender` color map support**: The `getInstance` method now accepts a color map, allowing users to specify custom font colors for different log levels. The default color map is exposed as a public property, enabling users to reference or modify it for their own configurations.
+- **Additional documentation**: Added `git-basics.md`, providing concise, project-specific instructions and best practices for using Git effectively within this repository.
+
+### Changed
+- Ensured cross-platform compatibility: Adjustments were made to guarantee the framework works in both Node.js/TypeScript and Office Scripts environments. To pass all tests, `setTimeout` was used in some cases to handle the asynchronous nature of Office Scripts.
+- **VSCode configuration improvements**: The project now uses a dedicated `types` folder to include all `*.d.ts` files, such as Office Scripts declarations and global variable definitions. This streamlines type management and ensures accurate IntelliSense and type checking within VSCode.
 
 ---
 

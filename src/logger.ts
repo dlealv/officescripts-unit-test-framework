@@ -34,10 +34,9 @@
  * ```
  * @remarks Designed and tested for Office Scripts runtime. Extendable with custom appenders via the 'Appender' interface.
  * @author David Leal
- * version 2.0.0
+ * version 2.1.0
  * creation date: 2024-10-01
  */
-
 
 // Enum DEFINITIONS
 // --------------------
@@ -78,10 +77,13 @@ type LogEventExtraFields = {
   [key: string]: string | number | Date | (() => string)
 }
 type LayoutFormatter = (event: LogEvent) => string
+
 // #endregion enum and types
+
 
 // INTERFACES
 // --------------------
+
 // #region INTERFACES
 
 /**
@@ -106,32 +108,32 @@ interface LogEvent {
    * The event type from the LOG_EVENT enum.
    * This field is immutable and must be set at construction.
    */
-  readonly type: LOG_EVENT;
+  readonly type: LOG_EVENT
 
   /**
    * The log message to be sent.
    * This field is immutable. It must not be null, undefined, or an empty string.
    */
-  readonly message: string;
+  readonly message: string
 
   /**
    * The timestamp when the event was created.
    * This field is immutable and must be a valid Date instance.
    */
-  readonly timestamp: Date;
+  readonly timestamp: Date
 
   /**
    * Additional metadata for the log event, for extension and contextual purposes.
    * This field is immutable and must be a plain object.
    * Intended for extensibility—avoid storing sensitive or large data here.
    */
-  readonly extraFields: LogEventExtraFields;
+  readonly extraFields: LogEventExtraFields
 
   /**
    * Returns a string representation of the log event in a human-readable, single-line format,
    * including all relevant fields.
    */
-  toString(): string;
+  toString(): string
 }
 
 /**
@@ -372,6 +374,7 @@ interface Logger {
   toString(): string
 
 }
+
 // #endregion INTERFACES
 
 // CLASSES
@@ -485,6 +488,7 @@ class Utility {
   }
 
 }
+
 
 // #region LogEventImpl
 /**
@@ -659,6 +663,7 @@ class LogEventImpl implements LogEvent {
 }
 // #endregion LogEventImpl
 
+
 // #region LayoutImpl
 /**
  * Default implementation of the 'Layout' interface.
@@ -671,38 +676,16 @@ class LogEventImpl implements LogEvent {
  */
 
 class LayoutImpl implements Layout {
-  /**
- * Convenience public constant to help users to define a short format for log events. 
- * Formats a log event as a short string as follows '[type] message'.
- * If extraFields are present in the event, they will be appended as a JSON object (surrounded by braces) to the output.
- * Example: [ERROR] Something bad happened {"user":"dlealv","id":42}
- * Defined as a named function to ensure toString() returns the function name.
- */
-  public static readonly shortFormatterFun = Object.freeze(function shortLayoutFormatterFun(event: LogEvent): string {
-    const sType = LOG_EVENT[event.type]
-    let extraFieldsStr = ""
-    if (event.extraFields && Object.keys(event.extraFields).length > 0) {
-      extraFieldsStr = ` ${JSON.stringify(event.extraFields)}` // JSON.stringify includes the braces
-    }
-    return `[${sType}] ${event.message}${extraFieldsStr}`
-  })
 
-  /**
- * Default formatter function. Created as a named function. Formats a log event as [timestamp] [type] message.
- * The timestamp is formatted as YYYY-MM-DD HH:mm:ss,SSS.
- * If extraFields are present in the event, they will be appended as a JSON object (surrounded by braces) to the output.
- * Example: [2025-06-19 15:06:41,123] [ERROR] Something bad happened {"user":"dlealv","id":42}
- * Defined as a named function to ensure toString() returns the function name.
- */
-  public static readonly defaultFormatterFun = Object.freeze(function defaultLayoutFormatterFun(event: LogEvent): string {
-    const sDATE = Utility.date2Str(event.timestamp)
-    const sType = LOG_EVENT[event.type]
-    let extraFieldsStr = ""
-    if (event.extraFields && Object.keys(event.extraFields).length > 0) {
-      extraFieldsStr = ` ${JSON.stringify(event.extraFields)}` // JSON.stringify includes the braces
-    }
-    return `[${sDATE}] [${sType}] ${event.message}${extraFieldsStr}`
-  })
+  /**Convninience static property to define a short formatter.
+   * @see LayoutImpl.shortFormatterFun
+  */
+  public static shortFormatterFun: LayoutFormatter
+
+  /**Convninient static property to define a long formatter used as default.
+   * @see LayoutImpl.defaultFormatterFun
+   */
+  public static defaultFormatterFun: LayoutFormatter
 
   /**
    * Function used to convert a LogEvent into a string.
@@ -787,76 +770,99 @@ class LayoutImpl implements Layout {
    *    - format is not a function or doesn't have arity 1
    *    - _formatter is present and is missing, not a function, or doesn't have arity 1
    */
-  public static validateLayout(layout: unknown, context?: string): asserts layout is Layout {
-    const PREFIX = context ? `[${context}]: ` : `[LayoutImpl.validateLayout]: `
-    const FORMAT_ERROR_MSG =
-      "Invalid Layout: The 'format' method must be a function accepting a single LogEvent argument. " +
-      'Example: event => "[type] " + event.message. See LayoutImpl documentation for usage.'
-
+  static validateLayout(layout: Layout, context?: string) {
+    const PREFIX = context ? `[${context}]: ` : "[LayoutImpl.validateLayout]: "
     if (!layout || typeof layout !== "object") {
-      throw new ScriptError(`${PREFIX}Invalid Layout: layout object is null or undefined`)
+      throw new ScriptError(PREFIX + "Invalid Layout: layout object is null or undefined")
     }
-    const maybeLayout = layout as Record<string, unknown>
-    // Validate public 'format' method exists and has correct signature
-    if (typeof maybeLayout.format !== "function" || (maybeLayout.format as Function).length !== 1) {
+    if (typeof layout.format !== "function" || layout.format.length !== 1) {
       throw new ScriptError(
-        `${PREFIX}${FORMAT_ERROR_MSG} Got: type="${typeof maybeLayout.format}", arity=${maybeLayout.format && typeof maybeLayout.format === "function" ? (maybeLayout.format as Function).length : "N/A"}`
-      )
+        `{PREFIX} Invalid Layout: The 'format' method must be a function accepting a single LogEvent argument. ` +
+        `See LayoutImpl documentation for usage.`
+      );
     }
-    // If _formatter property exists, validate it using the helper
-    if ("_formatter" in maybeLayout) {
-      LayoutImpl.validateFormatter(maybeLayout._formatter, context)
+    if (layout instanceof LayoutImpl) {
+      LayoutImpl.validateFormatter(layout._formatter, context)
     }
   }
 
   /**
- * Validates that the provided value is a valid formatter function
- * for use in LayoutImpl (_formatter property). The formatter must be
- * a function accepting a single LogEvent argument and must return a non-empty, non-null string.
- *
- * @param formatter - The candidate formatter function to validate
- * @param context - (Optional) Additional context for error messages
- * @throws ScriptError if formatter is missing, not a function, doesn't have arity 1,
- *                     or returns null/empty string for a sample event.
- */
-  private static validateFormatter(formatter: unknown, context?: string) {
-    const PREFIX = context ? `[${context}]: ` : `[${LayoutImpl.name}.validateFormatter]: `
-    const FORMATTER_ERROR_MSG =
-      "Invalid Layout: The internal '_formatter' property must be a function accepting a single LogEvent argument. " +
-      'Example: event => "[type] " + event.message. This is typically set in the LayoutImpl constructor. ' +
-      'See LayoutImpl documentation for usage.'
-
-    // 1. Type & arity check
-    if (typeof formatter !== "function" || (formatter as Function).length !== 1) {
+   * Validates that the provided value is a valid formatter function
+   * for use in LayoutImpl (_formatter property). The formatter must be
+   * a function accepting a single LogEvent argument and must return a non-empty, non-null string.
+   *
+   * @param formatter - The candidate formatter function to validate
+   * @param context - (Optional) Additional context for error messages
+   * @throws ScriptError if formatter is missing, not a function, doesn't have arity 1,
+   *                     or returns null/empty string for a sample event.
+   */
+  static validateFormatter(formatter: LayoutFormatter, context?: string) {
+    const PREFIX = context ? `[${context}]: ` : "[LayoutImpl.validateFormatter]: ";
+    if (typeof formatter !== "function" || formatter.length !== 1) {
       throw new ScriptError(
-        `${PREFIX}${FORMATTER_ERROR_MSG} Got: type="${typeof formatter}", arity=${formatter && typeof formatter === "function" ? (formatter as Function).length : "N/A"}`
-      )
+        PREFIX +
+        "Invalid Layout: The internal '_formatter' property must be a function accepting a single LogEvent argument. See LayoutImpl documentation for usage."
+      );
     }
-
-    // 2. Output check: ensure the function returns a non-null, non-empty string for a valid LogEvent
-    try {
-      const mockEvent: LogEvent = {
-        timestamp: new Date(),
-        type: (typeof LOG_EVENT === "object" ? Object.values(LOG_EVENT)[0] : 0) as LOG_EVENT,
-        message: "__validateFormatterTest__",
-        // Add extraFields if your LogEvent type supports it
-        extraFields: {
-          user: "test-user",
-          session: "mock-session"
-        }
-      }
-      const result = (formatter as LayoutFormatter)(mockEvent)
-      if (typeof result !== "string" || result === "" || result == null) {
-        throw new ScriptError(
-          `${PREFIX}Formatter function must return a non-empty string for a valid LogEvent. Got: ${result === "" ? "empty string" : String(result)}`
-        )
-      }
-    } catch (e) {
-      throw new ScriptError(`${PREFIX}Formatter function threw an error when formatting a valid LogEvent. Error: ${e instanceof Error ? e.message : String(e)}`)
+    // Try calling with a mock event
+    const mockEvent: LogEvent = {
+      type: LOG_EVENT.INFO,
+      message: "test",
+      timestamp: new Date(),
+      extraFields: {},
+    };
+    const result = formatter(mockEvent);
+    if (
+      typeof result !== "string" ||
+      result === "" ||
+      result == null
+    ) {
+      throw new ScriptError(
+        PREFIX +
+        "Formatter function must return a non-empty string for a valid LogEvent. Got: " +
+        (result === "" ? "empty string" : String(result))
+      );
     }
   }
 
 }
+
+// Assign the static formatters outside the class
+/**
+ * Convenience public constant to help users to define a short format for log events. 
+ * Formats a log event as a short string as follows '[type] message'.
+ * If extraFields are present in the event, they will be appended as a JSON object (surrounded by braces) to the output.
+ * Example: [ERROR] Something bad happened {"user":"dlealv","id":42}
+ * Defined as a named function to ensure toString() returns the function name.
+ */
+
+LayoutImpl.shortFormatterFun = Object.freeze(function shortLayoutFormatterFun(event: LogEvent): string {
+  const sType = LOG_EVENT[event.type]
+  let extraFieldsStr = ""
+  if (event.extraFields && Object.keys(event.extraFields).length > 0) {
+    extraFieldsStr = ` ${JSON.stringify(event.extraFields)}` // JSON.stringify includes the braces
+  }
+  return `[${sType}] ${event.message}${extraFieldsStr}`
+})
+
+/**
+ * Default formatter function. Created as a named function. Formats a log event as [timestamp] [type] message.
+ * The timestamp is formatted as YYYY-MM-DD HH:mm:ss,SSS.
+ * If extraFields are present in the event, they will be appended as a JSON object (surrounded by braces) to the  output.
+ * Example: [2025-06-19 15:06:41,123] [ERROR] Something bad happened {"user":"dlealv","id":42}
+ * Defined as a named function to ensure toString() returns the function name.
+ */
+
+LayoutImpl.defaultFormatterFun = Object.freeze(function defaultLayoutFormatterFun(event: LogEvent): string {
+  const sDATE = Utility.date2Str(event.timestamp)
+  const sType = LOG_EVENT[event.type]
+  let extraFieldsStr = ""
+  if (event.extraFields && Object.keys(event.extraFields).length > 0) {
+    extraFieldsStr = ` ${JSON.stringify(event.extraFields)}` // JSON.stringify includes the braces
+  }
+  return `[${sDATE}] [${sType}] ${event.message}${extraFieldsStr}`
+})
+
 // #endregion LayoutImpl
 
 
@@ -876,15 +882,10 @@ class LayoutImpl implements Layout {
  */
 abstract class AbstractAppender implements Appender {
   // Default factory function to create LogEvent instances, if was not set before.
-  private static readonly _defaultLogEventFactoryFun: LogEventFactory = Object.freeze(
-    function defaultLogEventFactoryFun(message: string, eventType: LOG_EVENT, extraFields?: LogEventExtraFields) {
-      return new LogEventImpl(message, eventType, extraFields)
-    }
-  )
+  public static defaultLogEventFactoryFun: LogEventFactory
   // Static layout shared by all events
   private static _layout: Layout | null = null
   // Static log event factory function used to create LogEvent instances.
-
   private static _logEventFactory: LogEventFactory | null = null
   private _lastLogEvent: LogEvent | null = null // The last event sent by the appender
 
@@ -933,7 +934,7 @@ abstract class AbstractAppender implements Appender {
    */
   public static getLogEventFactory(): LogEventFactory {
     if (!AbstractAppender._logEventFactory) {
-      AbstractAppender._logEventFactory = AbstractAppender._defaultLogEventFactoryFun // Default factory if not set
+      AbstractAppender._logEventFactory = AbstractAppender.defaultLogEventFactoryFun // Default factory if not set
     }
     return AbstractAppender._logEventFactory
   }
@@ -958,6 +959,7 @@ abstract class AbstractAppender implements Appender {
    * @param arg3 - extraFields, only used if arg1 is a string.
    * @override
    */
+
   public log(arg1: LogEvent | string, arg2?: LOG_EVENT, arg3?: LogEventExtraFields): void {
     const CONTEXT = `AbstractAppender.log`
     const PREFIX = `[${CONTEXT}]: `
@@ -1004,7 +1006,8 @@ abstract class AbstractAppender implements Appender {
    */
   public toString(): string {
     const NAME = "AbstractAppender" // since it can be extended, we use the class name as literal
-    const LAYOUT_STR = AbstractAppender._layout ? AbstractAppender._layout.toString() : "null"
+    const LAYOUT = AbstractAppender._layout
+    const LAYOUT_STR = LAYOUT ? LAYOUT.toString() : "null"
     const FACTORY_STR = AbstractAppender._logEventFactory ? AbstractAppender._logEventFactory.name || "anonymous" : "null"
     const LAST_LOG_EVENT_STR = this._lastLogEvent ? this._lastLogEvent.toString() : "null"
     return `${NAME}: {layout=${LAYOUT_STR}, logEventFactory="${FACTORY_STR}", lastLogEvent=${LAST_LOG_EVENT_STR}}`
@@ -1060,7 +1063,16 @@ abstract class AbstractAppender implements Appender {
   }
 
 }
+
+// Functions outside of the class:
+AbstractAppender.defaultLogEventFactoryFun = Object.freeze(
+  function defaultLogEventFactoryFun(message: string, eventType: LOG_EVENT, extraFields?: LogEventExtraFields) {
+    return new LogEventImpl(message, eventType, extraFields)
+  }
+)
+
 // #endregion AbstractAppender
+
 
 // #region ConsoleAppender
 /**
@@ -1145,6 +1157,7 @@ class ConsoleAppender extends AbstractAppender implements Appender {
     // format the output using the layout that gets lazy initialized if it was not set before
     const MSG = AbstractAppender.getLayout().format(event)
     console.log(MSG)
+
   }
 
   /** @internal
@@ -1161,7 +1174,9 @@ class ConsoleAppender extends AbstractAppender implements Appender {
   }
 
 }
+
 // #endregion ConsoleAppender
+
 
 // #region ExcelAppender
 /**
@@ -1184,10 +1199,10 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * These colors are defined as hex strings (without the # prefix).
    * The colors can be customized by passing a map of LOG_EVENT types to hex color strings
    * when calling getInstance(). Default colors are:
-  * - ERROR: "9c0006" (red)
-  * - WARN: "ed7d31" (orange)
-  * - INFO: "548235" (green)
-  * - TRACE: "7f7f7f" (gray)
+   * - ERROR: "9c0006" (red)
+   * - WARN: "ed7d31" (orange)
+   * - INFO: "548235" (green)
+   * - TRACE: "7f7f7f" (gray)
    */
   public static readonly DEFAULT_EVENT_FONTS = Object.freeze({
     [LOG_EVENT.ERROR]: "9c0006",  // RED
@@ -1200,26 +1215,29 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * Instance-level font map for current appender configuration.
    * Maps LOG_EVENT types to hex font strings.
    */
-  private readonly _eventFonts: Record<LOG_EVENT, string>;
+  private readonly _eventFonts: Record<LOG_EVENT, string>
 
   /* Regular expression to validate hexadecimal fonts */
-  private static readonly HEX_REGEX = Object.freeze(/^#?[0-9A-Fa-f]{6}$/);
+  private static readonly HEX_REGEX = Object.freeze(/^#?[0-9A-Fa-f]{6}$/)
 
   private static _instance: ExcelAppender | null = null; // Instance of the singleton pattern
-  private readonly _msgCellRng: ExcelScript.Range;
+  private readonly _msgCellRng: ExcelScript.Range
+  /* Required for Office Script limitation, only use getAddress, the first time _msgCellRng  is assigned, then 
+  use this property. Calling this._msgCellRng.getAddress() fails in toString(). The workaround is to create
+  this artificial property. */
+  private _msgCellRngAddress: string
 
-  // Private constructor to prevent user invocation
+  /**
+   * Private constructor to prevent user invocation.
+   * @remarks Office Script limitation. Cannot call ExcelScript API methods on Office objects inside a class constructor, instead
+   * we do such API calls in the getInstance() method.
+   */
   private constructor(msgCellRng: ExcelScript.Range, eventFonts: Record<LOG_EVENT, string> = ExcelAppender.DEFAULT_EVENT_FONTS
   ) {
-    super();
-    this._msgCellRng = msgCellRng;
-    this._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center);
-    this.clearCellIfNotEmpty()
+    super()
+    this._msgCellRng = msgCellRng
+    this.clearCellIfNotEmpty() // it can't be called in the construtor due to Office Script limitations
     this._eventFonts = eventFonts
-    // Set the default layout if not set
-    if (!AbstractAppender.getLayout()) {
-      AbstractAppender.setLayout(new LayoutImpl()); // Default layout if not set
-    }
   }
 
   // Setters and getters for the private properties
@@ -1238,7 +1256,7 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * @remarks This is the cell where log messages will be displayed.
    */
   public getMsgCellRng(): ExcelScript.Range {
-    return { ...this._msgCellRng}
+    return { ...this._msgCellRng }
   }
 
   /**
@@ -1271,11 +1289,11 @@ class ExcelAppender extends AbstractAppender implements Appender {
     if (!ExcelAppender._instance) {
       if (!msgCellRng || !msgCellRng.setValue) {
         const MSG = `${PREFIX}A valid ExcelScript.Range for input argument msgCellRng is required.`;
-        throw new ScriptError(MSG);
+        throw new ScriptError(MSG)
       }
       if (msgCellRng.getCellCount() != 1) {
         const MSG = `${PREFIX}Input argument msgCellRng must represent a single Excel cell.`;
-        throw new ScriptError(MSG);
+        throw new ScriptError(MSG)
       }
       // Enhanced Excel Range check in getInstance:
       if (!msgCellRng || typeof msgCellRng.setValue !== "function" ||
@@ -1295,9 +1313,13 @@ class ExcelAppender extends AbstractAppender implements Appender {
       };
       for (const [event, font] of Object.entries(fonts)) {
         const label = LOG_EVENT[Number(event)];
-        ExcelAppender.validateFont(font, label, CONTEXT);
+        ExcelAppender.validateFont(font, label, CONTEXT)
       }
       ExcelAppender._instance = new ExcelAppender(msgCellRng, fonts)
+      // Invoking Office Script API method, can't called in the `constructor` due to Office Script limitations
+      ExcelAppender._instance.clearCellIfNotEmpty("")
+      ExcelAppender._instance._msgCellRngAddress = msgCellRng.getAddress() // Store the address of the range for later use
+      ExcelAppender._instance._msgCellRng.getFormat().setVerticalAlignment(ExcelScript.VerticalAlignment.center)
     }
     return ExcelAppender._instance
   }
@@ -1333,17 +1355,16 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * @throws ScriptError, if the singleton was not instantiated.
    */
   public toString(): string {
-    ExcelAppender.validateInstance("ExcelAppender.toString");
-    const NAME = this.constructor.name;
-    const ADDRESS = this._msgCellRng.getAddress();
+    ExcelAppender.validateInstance("ExcelAppender.toString")
+    const NAME = this.constructor.name
     // Use enum reverse mapping for label
     const EVENT_COLORS = Object.entries(this._eventFonts).map(
       ([key, value]) =>
         `${LOG_EVENT[Number(key)]}="${value}"`
     ).join(",");
-    const output = `${super.toString()} ${NAME}: {msgCellRng(address)="${ADDRESS}", `
-      + `eventfonts={${EVENT_COLORS}}}`;
-    return output;
+    const output = `${super.toString()} ${NAME}: {msgCellRng(address)="${this._msgCellRngAddress}", `
+      + `eventfonts={${EVENT_COLORS}}}`
+    return output
   }
 
   /**
@@ -1351,6 +1372,7 @@ class ExcelAppender extends AbstractAppender implements Appender {
    * if not font was defined it doesn't change the font of the cell.
    * @param event a value from enum LOG_EVENT.
    * @throws ScriptError in case event is not a valid LOG_EVENT enum value.
+   * @override
    */
   protected sendEvent(event: LogEvent, context?: string): void {
     const CTX = context ? context : `${this.constructor.name}.sendEvent`
@@ -1370,11 +1392,11 @@ class ExcelAppender extends AbstractAppender implements Appender {
 
   // Common safeguard method
   private static validateInstance(context?: string): void {
-    const PREFIX = context ? `[${context}]: ` : `[${ExcelAppender.name}]: `;
+    const PREFIX = context ? `[${context}]: ` : `[${ExcelAppender.name}]: `
     // If the instance is not defined, throw an error
     if (!ExcelAppender._instance) {
       const MSG = `${PREFIX}A singleton instance can't be undefined or null. Please invoke getInstance first`;
-      throw new ScriptError(MSG);
+      throw new ScriptError(MSG)
     }
   }
 
@@ -1400,8 +1422,21 @@ class ExcelAppender extends AbstractAppender implements Appender {
       throw new ScriptError(MSG)
     }
   }
+
+  /** Validates that all log events are properly mapped to colors and fonts. */
+  private static validateLogEventMappings(): void {
+    const logEventValues = Object.values(LOG_EVENT).filter(v => typeof v === "number") as LOG_EVENT[]
+    const missingColor = logEventValues.filter(ev => !(ev in ExcelAppender.DEFAULT_EVENT_FONTS))
+    if (missingColor.length > 0) {
+      throw new ScriptError(
+        `[ExcelAppender]: LOG_EVENT enum is not fully mapped in DEFAULT_EVENT_FONTS. Missing: color=${missingColor.map(ev => LOG_EVENT[ev]).join(", ")}`
+      );
+    }
+  }
+
   /**
    * Clears the message cell only if it is not empty.
+   * @remarks Defined before constructor to ensure Script Office compatibility, since it is used in the constructor.
    */
   private clearCellIfNotEmpty(nextValue?: string): void {
     const value = this._msgCellRng.getValue()
@@ -1410,19 +1445,9 @@ class ExcelAppender extends AbstractAppender implements Appender {
     }
   }
 
-  /** Validates that all log events are properly mapped to colors and fonts. */
-  private static validateLogEventMappings(): void {
-    const logEventValues = Object.values(LOG_EVENT).filter(v => typeof v === "number") as LOG_EVENT[];
-    const missingColor = logEventValues.filter(ev => !(ev in ExcelAppender.DEFAULT_EVENT_FONTS));
-    if (missingColor.length > 0) {
-      throw new ScriptError(
-        `[ExcelAppender]: LOG_EVENT enum is not fully mapped in DEFAULT_EVENT_FONTS. Missing: color=${missingColor.map(ev => LOG_EVENT[ev]).join(", ")}`
-      );
-    }
-  }
-
 }
 // #endregion ExcelAppender
+
 
 // #region LoggerImpl
 /**
@@ -1465,8 +1490,8 @@ class LoggerImpl implements Logger {
 
   // Equivalent labels from LEVEL
   private static readonly LEVEL_LABELS = Object.entries(LoggerImpl.LEVEL).reduce((acc, [key, value]) => {
-    acc[value] = key;
-    return acc;
+    acc[value] = key
+    return acc
   }, {} as Record<string, string>)
 
   // Equivalent labels from ACTION
@@ -1480,8 +1505,8 @@ class LoggerImpl implements Logger {
   private static readonly DEFAULT_LEVEL = LoggerImpl.LEVEL.WARN
   private static readonly DEFAULT_ACTION = LoggerImpl.ACTION.EXIT
 
-  private readonly _level: typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL] = LoggerImpl.DEFAULT_LEVEL;
-  private readonly _action: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION] = LoggerImpl.DEFAULT_ACTION;
+  private readonly _level: typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL] = LoggerImpl.DEFAULT_LEVEL
+  private readonly _action: typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION] = LoggerImpl.DEFAULT_ACTION
   private _criticalEvents: LogEvent[] = []; // Collects all ERROR and WARN events only
   private _errCnt = 0;   // Counts the number of error events found
   private _warnCnt = 0;  // Counts the number of warning events found
@@ -1500,37 +1525,42 @@ class LoggerImpl implements Logger {
   /** 
    * @returns An array with error and warning event messages only.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
+
   public getCriticalEvents(): LogEvent[] {
-    LoggerImpl.validateInstance("LoggerImpl.getCriticalEvents") // Validate the instance
-    return LoggerImpl._instance._criticalEvents
+    LoggerImpl.validateInstance("LoggerImpl.getCriticalEvents")
+    return this._criticalEvents
   }
 
   /** 
    * @returns Total number of error message events sent to the appenders.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public getErrCnt(): number {
     LoggerImpl.validateInstance("LoggerImpl.getErrCnt") // Validate the instance
-    return LoggerImpl._instance._errCnt
+    return this._errCnt
   }
 
-  /** 
+  /**
    * @returns Total number of warning events sent to the appenders.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public getWarnCnt(): number {
     LoggerImpl.validateInstance("LoggerImpl.getWarnCnt") // Validate the instance
-    return LoggerImpl._instance._warnCnt
+    return this._warnCnt
   }
 
   /** 
    * @returns The action to take in case of errors or warning log events.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public getAction(): typeof LoggerImpl.ACTION[keyof typeof LoggerImpl.ACTION] {
     LoggerImpl.validateInstance("LoggerImpl.getAction") // Validate the instance
-    return LoggerImpl._instance._action
+    return this._action
   }
 
   /** 
@@ -1539,19 +1569,21 @@ class LoggerImpl implements Logger {
    * Logger.ERROR is lower.
    * @returns The current log level.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public getLevel(): typeof LoggerImpl.LEVEL[keyof typeof LoggerImpl.LEVEL] {
     LoggerImpl.validateInstance("LoggerImpl.getLevel") // Validate the instance
-    return LoggerImpl._instance._level
+    return this._level
   }
 
   /**
    * @returns Array with appenders subscribed to the Logger.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public getAppenders(): Appender[] {
     LoggerImpl.validateInstance("LoggerImpl.getAppenders") // Validate the instance
-    return LoggerImpl._instance._appenders
+    return this._appenders
   }
 
   // Setters
@@ -1563,13 +1595,14 @@ class LoggerImpl implements Logger {
    *                     null or undefined entries,
    *                     or if the appenders to add are not unique
    *                     by appender class. See JSDoc from addAppender.
+   * @override
    * @see addAppender
    */
   public setAppenders(appenders: Appender[]) {
     const CONTEXT = `${LoggerImpl.name}.setAppenders`
     LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    LoggerImpl.assertUniqueAppenderTypes(appenders, CONTEXT) // Validate uniqueness
-    LoggerImpl._instance._appenders = appenders
+    LoggerImpl.assertUniqueAppenderTypes(appenders, CONTEXT)
+    this._appenders = appenders
   }
 
   /**
@@ -1579,6 +1612,7 @@ class LoggerImpl implements Logger {
    *                     if the input argument is null or undefined,
    *                     or if it breaks the class uniqueness of the appenders.
    *                     All appenders must be from a different implementation of the Appender class.
+   * @override
    * @see setAppenders
    */
   public addAppender(appender: Appender): void {
@@ -1590,7 +1624,7 @@ class LoggerImpl implements Logger {
     }
     const newAppenders = [...LoggerImpl._instance._appenders, appender]
     LoggerImpl.assertUniqueAppenderTypes(newAppenders, "LoggerImpl.addAppender") // Validate uniqueness
-    LoggerImpl._instance._appenders.push(appender)
+    this._appenders.push(appender)
   }
 
   /**
@@ -1642,11 +1676,11 @@ class LoggerImpl implements Logger {
   public removeAppender(appender: Appender): void {
     const CONTEXT = `${LoggerImpl.name}.removeAppender`
     LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    const appenders = LoggerImpl._instance._appenders
+    const appenders = this._appenders
     if (!Utility.isEmptyArray(appenders)) {
-      const index = LoggerImpl._instance._appenders.indexOf(appender)
+      const index = this._appenders.indexOf(appender)
       if (index > -1) {
-        LoggerImpl._instance._appenders.splice(index, 1) // Remove one element at index
+        this._appenders.splice(index, 1) // Remove one element at index
       }
     }
   }
@@ -1713,8 +1747,8 @@ class LoggerImpl implements Logger {
    */
   public hasErrors(): boolean {
     const CONTEXT = `${LoggerImpl.name}.hasErrors`
-    LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    return LoggerImpl._instance._errCnt > 0
+    LoggerImpl.validateInstance(CONTEXT)
+    return this._errCnt > 0
   }
 
   /**
@@ -1723,8 +1757,8 @@ class LoggerImpl implements Logger {
    */
   public hasWarnings(): boolean {
     const CONTEXT = `${LoggerImpl.name}.hasWarnings`
-    LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    return LoggerImpl._instance._warnCnt > 0
+    LoggerImpl.validateInstance(CONTEXT)
+    return this._warnCnt > 0
   }
 
   /**
@@ -1733,8 +1767,8 @@ class LoggerImpl implements Logger {
    */
   public hasMessages(): boolean {
     const CONTEXT = `${LoggerImpl.name}.hasMessages`
-    LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    return LoggerImpl._instance._criticalEvents.length > 0
+    LoggerImpl.validateInstance(CONTEXT)
+    return this._criticalEvents.length > 0
   }
 
   /**
@@ -1743,10 +1777,10 @@ class LoggerImpl implements Logger {
    */
   public reset(): void {
     const CONTEXT = `${LoggerImpl.name}.clear`
-    LoggerImpl.validateInstance(CONTEXT) // Validate the instance
-    LoggerImpl._instance._criticalEvents = []
-    LoggerImpl._instance._errCnt = 0
-    LoggerImpl._instance._warnCnt = 0
+    LoggerImpl.validateInstance(CONTEXT)
+    this._criticalEvents = []
+    this._errCnt = 0
+    this._warnCnt = 0
   }
 
   /**
@@ -1767,15 +1801,15 @@ class LoggerImpl implements Logger {
   } {
     const CONTEXT = `${LoggerImpl.name}.exportState`
     LoggerImpl.validateInstance(CONTEXT); // Validate the instance
-    const levelKey = Object.keys(LoggerImpl.LEVEL).find(k => LoggerImpl.LEVEL[k as keyof typeof LoggerImpl.LEVEL] === LoggerImpl._instance._level);
-    const actionKey = Object.keys(LoggerImpl.ACTION).find(k => LoggerImpl.ACTION[k as keyof typeof LoggerImpl.ACTION] === LoggerImpl._instance._action);
+    const levelKey = Object.keys(LoggerImpl.LEVEL).find(k => LoggerImpl.LEVEL[k as keyof typeof LoggerImpl.LEVEL] === this._level);
+    const actionKey = Object.keys(LoggerImpl.ACTION).find(k => LoggerImpl.ACTION[k as keyof typeof LoggerImpl.ACTION] === this._action);
 
     return {
       level: levelKey ?? "UNKNOWN",
       action: actionKey ?? "UNKNOWN",
-      errorCount: LoggerImpl._instance._errCnt,
-      warningCount: LoggerImpl._instance._warnCnt,
-      criticalEvents: [...LoggerImpl._instance._criticalEvents]
+      errorCount: this._errCnt,
+      warningCount: this._warnCnt,
+      criticalEvents: [...this._criticalEvents]
     }
   }
 
@@ -1813,10 +1847,11 @@ class LoggerImpl implements Logger {
   /**
    * Override toString method.
    * @throws ScriptError If the singleton was not instantiated.
+   * @override
    */
   public toString(): string {
     const CONTEXT = `${LoggerImpl.name}.toString`
-    LoggerImpl.validateInstance(CONTEXT); // Validate the instance
+    LoggerImpl.validateInstance(CONTEXT) // Validate the instance
     const NAME = this.constructor.name
     const levelTk = Object.keys(LoggerImpl.LEVEL).find(key =>
       LoggerImpl.LEVEL[key as keyof typeof LoggerImpl.LEVEL] === this._level)
@@ -1825,7 +1860,7 @@ class LoggerImpl implements Logger {
     const appendersString = Array.isArray(this._appenders)
       ? `[${this._appenders.map(a => a.toString()).join(", ")}]`
       : "[]"
-    const scalarInfo = `level: "${levelTk}", action: "${actionTk}", errCnt: ${LoggerImpl._instance._errCnt}, warnCnt: ${LoggerImpl._instance._warnCnt}`
+    const scalarInfo = `level: "${levelTk}", action: "${actionTk}", errCnt: ${this._errCnt}, warnCnt: ${this._warnCnt}`
     return `${NAME}: {${scalarInfo}, appenders: ${appendersString}}`
   }
 
@@ -1840,12 +1875,11 @@ class LoggerImpl implements Logger {
       LoggerImpl.LEVEL[key as keyof typeof LoggerImpl.LEVEL] === this._level)
     const actionTk = Object.keys(LoggerImpl.ACTION).find(key =>
       LoggerImpl.ACTION[key as keyof typeof LoggerImpl.ACTION] === this._action)
-    const scalarInfo = `level: "${levelTk}", action: "${actionTk}", errCnt: ${LoggerImpl._instance._errCnt}, warnCnt: ${LoggerImpl._instance._warnCnt}`
+    const scalarInfo = `level: "${levelTk}", action: "${actionTk}", errCnt: ${this._errCnt}, warnCnt: ${this._warnCnt}`
     const appendersString = Array.isArray(this._appenders)
       ? `[${this._appenders.map(a => a.constructor.name).join(", ")}]`
       : "[]"
     return `${NAME}: {${scalarInfo}, appenders: ${appendersString}}`
-
   }
 
   // #TEST-ONLY-START
@@ -1900,27 +1934,27 @@ class LoggerImpl implements Logger {
  */
   private log(msg: string, type: LOG_EVENT, extraFields?: LogEventExtraFields): void {
     LoggerImpl.initIfNeeded("LoggerImpl.log") // lazy initialization of the singleton with default parameters
-    const SEND_EVENTS = (LoggerImpl._instance._level !== LoggerImpl.LEVEL.OFF)
-      && (LoggerImpl._instance._level >= type) // Only send events if the level allows it
+    const SEND_EVENTS = (this._level !== LoggerImpl.LEVEL.OFF)
+      && (this._level >= type) // Only send events if the level allows it
     if (SEND_EVENTS) {
-      if (Utility.isEmptyArray(this.getAppenders())) {
+      if (Utility.isEmptyArray(this._appenders)) {
         this.addAppender(ConsoleAppender.getInstance()) // lazy initialization at least the basic appender
       }
-      for (const appender of LoggerImpl._instance._appenders) { // sends to all appenders
+      for (const appender of this._appenders) { // sends to all appenders
         appender.log(msg, type, extraFields) // Pass extraFields through to the appender
       }
       if (type <= LOG_EVENT.WARN) { // Only collects errors or warnings event messages
         // Updating the counter
-        if (type === LOG_EVENT.ERROR) ++LoggerImpl._instance._errCnt
-        if (type === LOG_EVENT.WARN) ++LoggerImpl._instance._warnCnt
+        if (type === LOG_EVENT.ERROR) ++this._errCnt
+        if (type === LOG_EVENT.WARN) ++this._warnCnt
         // Updating the message. Assumes first appender is representative (message for all appenders are the same)
-        const appender = LoggerImpl._instance._appenders[0]
+        const appender = this._appenders[0]
         const lastEvent = appender.getLastLogEvent()
         if (!lastEvent) {// internal error
           throw new Error("[LoggerImpl.log] Appender did not return a LogEvent for getLastLogEvent()")
         }
-        LoggerImpl._instance._criticalEvents.push(lastEvent)
-        if (LoggerImpl._instance._action === LoggerImpl.ACTION.EXIT) {
+        this._criticalEvents.push(lastEvent)
+        if (this._action === LoggerImpl.ACTION.EXIT) {
           const LAST_MSG = AbstractAppender.getLayout().format(lastEvent)
           throw new ScriptError(LAST_MSG)
         }
@@ -2028,6 +2062,7 @@ class LoggerImpl implements Logger {
 // ===================================================
 
 // Export to globalThis for Office Scripts compatibility in Node/ts-node
+
 if (typeof globalThis !== "undefined") {
   if (typeof LOG_EVENT !== "undefined") {
     // @ts-ignore

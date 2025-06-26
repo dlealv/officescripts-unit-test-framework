@@ -11,6 +11,12 @@
 // - All strict type checks except strictNullChecks are enabled for code quality.
 // - Side comments explain individual settings inline.
 // - This config includes all code folders for full IntelliSense in VS Code. For a production-only build, use a separate config if needed.
+//
+// - "typeRoots" specifies directories where TypeScript should look for type definition files (*.d.ts).
+//     * "./types" is included to provide Office Scripts and custom global type definitions for this project.
+//     * "./node_modules/@types" is included for compatibility with community and built-in type packages (e.g., for Node.js or testing frameworks).
+//     * Only .d.ts files in these folders will be included for global types, so make sure all necessary type definitions are placed accordingly.
+//
 {
   "compilerOptions": {
     "emitDeclarationOnly": true, // Only output .d.ts files, not .js
@@ -21,17 +27,21 @@
     "target": "es2019", // Set JS target (irrelevant here, but required)
     "strict": true, // Enable all strict type-checking options
     "strictNullChecks": false, // Disable strict null/undefined checks (see note above)
-    "esModuleInterop": true // Enable compatibility for ES modules/CommonJS imports
+    "esModuleInterop": true, // Enable compatibility for ES modules/CommonJS imports
+    "typeRoots": [
+      "./types",                // Look for custom and Office Scripts type definitions here
+      "./node_modules/@types"   // Standard location for community-provided type definitions
+    ]
   },
   "include": [
-    "src/**/*",            // Main source code
-    "test/**/*",           // Unit and integration tests
-    "mocks/**/*",          // Mocks for unit testing
-    "wrappers/**/*",       // Wrappers for dependency injection/testing
-    "office-scripts.d.ts"  // Office Scripts type definitions
+    "src/**/*",
+    "test/**/*",
+    "mocks/**/*",
+    "wrappers/**/*",
+    "types/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "dist",
+    "node_modules"
   ]
 }

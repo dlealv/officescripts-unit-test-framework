@@ -1,4 +1,4 @@
-/// <reference path="../office-scripts.d.ts" />
+
 // main-wrapper.ts
 //
 // - This file acts as the entry point for running all tests in a local or CI environment.

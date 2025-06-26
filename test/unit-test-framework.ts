@@ -1,5 +1,6 @@
 
 // #region unit-test-framework.ts
+
 // ====================================================
 // Lightweight unit testing framework for Office Script
 // ====================================================
@@ -12,7 +13,7 @@
  * @remarks See the documentation for the Assert and TestRunner classes for assertion details and test execution control.
  * author David Leal
  * date 2025-06-03 (creation date)
- * version 2.0.0
+ * version 2.1.0
  */
 
 // #region AssertionError
@@ -481,4 +482,6 @@ if (typeof globalThis !== "undefined") {
 }
 
 //#endregion unit-test-framework.ts
+
+
 

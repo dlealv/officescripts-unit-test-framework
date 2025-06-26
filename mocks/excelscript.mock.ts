@@ -1,3 +1,4 @@
+
 // excelscript.mock.ts
 //
 // - This file provides a minimal mock implementation of the ExcelScript namespace for local testing of Office Scripts.
@@ -89,7 +90,6 @@ export namespace ExcelScript {
 }
 
 // Make ExcelScript available globally for Node/ts-node test environments
-if (typeof globalThis !== "undefined" && typeof ExcelScript !== "undefined") {
-  // @ts-ignore
-  globalThis.ExcelScript = ExcelScript;
-}
+// Attach the mock ExcelScript namespace and environment flag to globalThis for compatibility with test environments (Node, ts-node, etc.)
+(globalThis as any).ExcelScript = ExcelScript;
+(globalThis as any).RunSyncTest = true; // If true, no need to force a delay for tests
