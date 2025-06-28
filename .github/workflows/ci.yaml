@@ -1,4 +1,15 @@
-```yaml
+# File: .github/workflows/ci.yaml
+# This GitHub Actions workflow is designed to run on pull requests targeting the `main` branch
+# of your repository. It sets up a continuous integration (CI) environment to build and test
+# your Office Scripts project using Node.js and TypeScript.
+#**Usage summary:**
+#- Triggers for pull requests targeting the `main` branch.
+#- Runs on Ubuntu using Node.js v20.
+#- Installs dependencies, copies TypeScript code for review, and runs tests using Node.js with mocks (no Excel Online needed).
+#- Test entry point and mocks are controlled by `wrappers/main-wrapper.ts` and `mocks/excelscript.mock.ts`.
+#- All steps use standard GitHub Actions and npm scripts as defined in your project.
+# The workflow includes the following steps:
+
 name: CI
 
 on:
@@ -32,10 +43,3 @@ jobs:
       # Runs the test suite using ts-node and local Office Script mocks (configured in wrappers/main-wrapper.ts)
       - name: Run tests (local Node.js + mocks)
         run: npm test
-```
-**Usage summary:**
-- Triggers for pull requests targeting the `main` branch.
-- Runs on Ubuntu using Node.js v20.
-- Installs dependencies, copies TypeScript code for review, and runs tests using Node.js with mocks (no Excel Online needed).
-- Test entry point and mocks are controlled by `wrappers/main-wrapper.ts` and `mocks/excelscript.mock.ts`.
-- All steps use standard GitHub Actions and npm scripts as defined in your project.
