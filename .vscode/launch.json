@@ -1,22 +1,24 @@
 {
+  // Launch config for Office Scripts unit test framework (Node.js + ts-node)
   "version": "0.2.0",
   "configurations": [
     {
+      // Launches and debugs TypeScript tests using ts-node
       "type": "node",
       "request": "launch",
-      "name": "Debug via Task: main-wrapper.ts (ts-node)",
-      "runtimeExecutable": "npx",
+      "name": "Debug main-wrapper.ts (ts-node)",
+      "runtimeExecutable": "npx", // Use npx for local dependencies
       "runtimeArgs": [
-        "--node-options=--inspect-brk",
-        "ts-node",
+        "--node-options=--inspect-brk", // Enable debugger and break on entry
+        "ts-node",                      // Run TS files directly
         "--project",
-        "tsconfig.test.json"
+        "tsconfig.json"                 // Use project tsconfig
       ],
       "args": [
-        "${workspaceFolder}/wrappers/main-wrapper.ts"
+        "${workspaceFolder}/wrappers/main-wrapper.ts" // Entry point script
       ],
-      "preLaunchTask": "Run main-wrapper.ts with ts-node",
-      "skipFiles": ["<node_internals>/**"]
+      "preLaunchTask": "Run main-wrapper.ts with ts-node", // Optional: see tasks.json
+      "skipFiles": ["<node_internals>/**"] // Don’t step into Node internals
     }
   ]
 }

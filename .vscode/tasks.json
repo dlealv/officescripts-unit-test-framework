@@ -1,16 +1,17 @@
 {
+  // VS Code task to run or debug Office Scripts unit tests locally with ts-node
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run main-wrapper.ts with ts-node",
+      "label": "Run main-wrapper.ts with ts-node",     // Task name shown in UI
       "type": "shell",
-      "command": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts",
+      "command": "npx ts-node --project tsconfig.json wrappers/main-wrapper.ts", // Runs test entry point
       "group": {
         "kind": "build",
-        "isDefault": true
+        "isDefault": true                              // Default build task (Ctrl+Shift+B)
       },
       "presentation": {
-        "reveal": "always"
+        "reveal": "always"                             // Always show terminal output
       }
     }
   ]

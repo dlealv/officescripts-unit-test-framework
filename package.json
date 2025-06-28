@@ -1,7 +1,7 @@
 {
-  "name": "officescripts-logging-framework",
-  "version": "2.1",
-  "description": "Lightweight, extensible logging framework for Office Scripts, inspired by libraries like Log4j. Enables structured logging via a singleton 'Logger', supporting multiple log levels ('Logger.LEVEL') and pluggable output targets through the 'Appender' interface",
+  "name": "officescripts-unit-testing-framework",
+  "version": "1.0.0",
+  "description": "Lightweight, extensible unit testing framework for Office Scripts, inspired by libraries like JUnit. Provides basic assertion capabilities and defines the structure for executing test cases. Designed for easy integration and extension within Office Scripts projects.",
   "main": "index.js",
   "directories": {
     "test": "test"
@@ -28,23 +28,21 @@
   },
   "scripts": {
     "setup": "npm install && npx tsc --init",
-    "build": "npm run copy:ts && npm run strip:testonly",
-    "copy:ts": "mkdir -p dist && rsync -av --include='*/' --include='*.ts' --exclude='*' src/ dist/",
-    "strip:testonly": "node scripts/strip-testonly.js",
-    "test": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts",
+    "build": "npm run copy:ts",
+    "copy:ts": "mkdir -p dist && rsync -av --include='*.ts' --exclude='*' src/ dist/",
+    "test": "npx ts-node --project tsconfig.json wrappers/main-wrapper.ts",
     "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug",
     "doc:ts:install": "npm install --save-dev typedoc",
-    "doc:ts:run": "npx typedoc src/logger.ts --out docs/typedoc --readme none --tsconfig tsconfig.json --theme default"
+    "doc:ts:run": "npx typedoc src/unit-test-framework.ts --out docs/typedoc --readme none --tsconfig tsconfig.json --theme default"
   },
   "keywords": [
     "office-scripts",
-    "logging",
-    "logger",
-    "log4j",
-    "framework",
+    "testing",
+    "unit-testing",
+    "testing-framework",
+    "testing-library",
     "typescript",
-    "excel",
-    "structured-logging"
+    "unit-testing-framework"
   ],
   "author": "David Leal <dleal67@gmail.com>",
   "license": "MIT"

@@ -1,44 +1,40 @@
-// TypeScript configuration for this Office Scripts project and its tests.
-//
-// - We set "strictNullChecks" to false because Office Scripts APIs return 'undefined' in many cases
-//   where TypeScript would expect 'null', and enabling strict null checks would cause excessive
-//   type errors or force verbose code without practical benefit in this context.
-//
-// - "mocks" and "wrappers" directories are included for testability and local development:
-//     * "mocks" provides stand-ins for Office Scripts APIs, enabling unit testing outside Excel online.
-//     * "wrappers" adapt Office Scripts APIs to be more test-friendly and to allow dependency injection.
-//
-// - All strict type checks except strictNullChecks are enabled for code quality.
-// - Side comments explain individual settings inline.
-// - This config includes all code folders for full IntelliSense in VS Code. For a production-only build, use a separate config if needed.
-//
-// - "typeRoots" specifies directories where TypeScript should look for type definition files (*.d.ts).
-//     * "./types" is included to provide Office Scripts and custom global type definitions for this project.
-//     * "./node_modules/@types" is included for compatibility with community and built-in type packages (e.g., for Node.js or testing frameworks).
-//     * Only .d.ts files in these folders will be included for global types, so make sure all necessary type definitions are placed accordingly.
-//
 {
+  // TypeScript configuration for this Office Scripts project and its tests.
+  //
+  // - "strictNullChecks" is set to false because Office Scripts APIs often return 'undefined'
+  //   where TypeScript expects 'null'. Enabling strict null checks would cause excessive
+  //   type errors or require verbose code, which is impractical for this context.
+  //
+  // - "mocks" and "wrappers" directories are included to support local unit testing and
+  //   development outside Excel Online.
+  //
+  // - "typeRoots" includes both custom Office Scripts typings and standard @types packages.
+  //   This ensures IntelliSense and type checking works for both Office Scripts mocks and
+  //   any Node.js or test framework typings.
+  //
+  // - All strict type checks except strictNullChecks are enabled for code quality.
+  // - "include" covers all source, test, mock, and type definition files.
+  // - "exclude" omits build and dependency artifacts.
   "compilerOptions": {
-    "emitDeclarationOnly": true, // Only output .d.ts files, not .js
-    "declaration": true, // Generate type declaration files
-    "outDir": "dist", // Output directory for build artifacts
-    "rootDir": ".", // Project root as rootDir to capture all code
-    "module": "commonjs", // Module system for output
-    "target": "es2019", // Set JS target (irrelevant here, but required)
-    "strict": true, // Enable all strict type-checking options
-    "strictNullChecks": false, // Disable strict null/undefined checks (see note above)
-    "esModuleInterop": true, // Enable compatibility for ES modules/CommonJS imports
+    "target": "es2019",               // Output ES2019-compatible JS (irrelevant for Office Scripts, but required for Node)
+    "module": "commonjs",             // Module system for Node.js compatibility
+    "declaration": true,              // Generate .d.ts type declaration files
+    "outDir": "dist",                 // Output directory for build artifacts
+    "rootDir": ".",                   // Project root as rootDir to capture all code
+    "strict": true,                   // Enable all strict type-checking options
+    "strictNullChecks": false,        // Disable strict null/undefined checks (see note above)
+    "esModuleInterop": true,          // Enable ES module/CommonJS import compatibility
     "typeRoots": [
-      "./types",                // Look for custom and Office Scripts type definitions here
-      "./node_modules/@types"   // Standard location for community-provided type definitions
+      "./types",                      // Custom Office Scripts and project type definitions
+      "./node_modules/@types"         // Standard type definitions from npm packages
     ]
   },
   "include": [
     "src/**/*",
     "test/**/*",
-    "mocks/**/*",
-    "wrappers/**/*",
-    "types/**/*.d.ts"
+    "types/**/*.d.ts",
+    "wrappers/**/*.ts",
+    "mocks/**/*.ts"
   ],
   "exclude": [
     "dist",

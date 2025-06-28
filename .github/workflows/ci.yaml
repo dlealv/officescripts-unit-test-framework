@@ -1,3 +1,4 @@
+```yaml
 name: CI
 
 on:
@@ -10,19 +11,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checks out your repository under $GITHUB_WORKSPACE
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Sets up Node.js 20.x for builds and tests
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      # Installs dependencies as specified in package-lock.json using clean install (for reproducibility)
       - name: Install dependencies
         run: npm ci
 
+      # Copies TypeScript files to dist/ (no compilation, as Office Scripts run on TypeScript directly)
       - name: Build TypeScript (production)
         run: npm run build
 
+      # Runs the test suite using ts-node and local Office Script mocks (configured in wrappers/main-wrapper.ts)
       - name: Run tests (local Node.js + mocks)
         run: npm test
+```
+**Usage summary:**
+- Triggers for pull requests targeting the `main` branch.
+- Runs on Ubuntu using Node.js v20.
+- Installs dependencies, copies TypeScript code for review, and runs tests using Node.js with mocks (no Excel Online needed).
+- Test entry point and mocks are controlled by `wrappers/main-wrapper.ts` and `mocks/excelscript.mock.ts`.
+- All steps use standard GitHub Actions and npm scripts as defined in your project.
