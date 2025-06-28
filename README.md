@@ -307,4 +307,4 @@ If verbosity level is `HEADER` the output will be:
 
 ## License
 
-MIT
+[MIT](LICENCE)
