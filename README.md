@@ -1,14 +1,14 @@
 # Office Scripts Unit Testing Framework
 
 A lightweight, extensible unit testing framework for [Office Scripts](https://learn.microsoft.com/en-us/office/dev/scripts/) & TypeScript, inspired by libraries like JUnit.  
-Provides basic assertion capabilities and a structured test runner for easy test authoring, debugging, and reporting—**usable both in Excel Online and in local Node/TypeScript environments**.
+Provides basic assertion capabilities and a structured test runner for easy test authoring, debugging, and reporting—**usable both in Office Scripts and in local Node/TypeScript environments**.
 
 ---
 
 ## Features
 
 - **Assert Class**: Rich assertion methods for values, arrays (with type and value checking), exceptions, types, containment, and more.
-- **TestRunner**: Structured, hierarchical output with configurable verbosity levels (OFF, HEADER, SECTION, SUBSECTION).
+- **TestRunner**: Structured, hierarchical output with configurable verbosity levels (`OFF`, `HEADER`, `SECTION`, `SUBSECTION`).
 - **Compatible**: Runs on both Office Scripts and Node/TypeScript (for local or CI testing).
 - **Simple**: No dependencies, no decorators, no runtime imports.
 - **Extendable**: Add your own assertions or test conventions easily.
@@ -24,21 +24,28 @@ Place `unit-test-framework.ts` in your project.
 
 ### 2. Write Tests
 
-Create a test class with static methods, e.g.:
+Define a `TestRunner` and create a test class with static methods, e.g.:
 
 ```typescript
+runner = new TestRunner(TestRunner.VERBOSITY.SECTION)     // Define the test case runneer and verbosity level
+runner.title("Start Testing", 1)                          // Sending the title to console indicating the test started
+run.exec("Test Case for math", () => TestCase.math(), 1)  // Executing math method from TestCase
+runner.title("End Testing", 1)                            // Sending the title to console indicating the test ended
+
+// Class where to organize all test cases
 class TestCase {
-  public static mathTest(): void {
+  public static math(): void {
     Assert.equals(2 + 2, 4, "Addition works")
     Assert.isTrue(5 > 2, "Greater comparison")
     Assert.throws(() => { throw new Error("fail") }, Error, "fail", "Throw check")
   }
 }
 ```
+**Note:** `TestCase` class is not requied, just a way to organize all test cases to be executed via `TestRunner` class.
 
 ### 3. Run Tests
 
-In Office Scripts, call `main(workbook)` (see `main.ts`).
+In Office Scripts, call `main(workbook)` (see `test/main.ts`).
 
 In Node/TypeScript, run a wrapper (see `main-wrapper.ts`) that invokes `main`.
 
@@ -57,9 +64,9 @@ Assert.equals(actual, expected, "optional message")
 - For arrays, each element is checked for both type and value. For objects/arrays of objects, a deep check (using JSON.stringify) is performed.
 - Example:
   ```typescript
-  Assert.equals([1, 2, 3], [1, 2, 3], "Arrays are equal")
-  Assert.equals([1, "2"], [1, 2]) // Fails: type mismatch at index 1
-  Assert.equals([{x:1}], [{x:1}]) // Passes: objects are deeply equal
+  Assert.equals([1, 2, 3], [1, 2, 3], "Arrays are equal"). // Passes: Arrays are equals. Using optional message
+  Assert.equals([1, "2"], [1, 2])                          // Fails: type mismatch at index 1
+  Assert.equals([{x:1}], [{x:1}])                          // Passes: objects are deeply equal
   ```
 
 #### Inequality
@@ -196,8 +203,8 @@ runner.exec("My Test Name", () => {
 #### Structured Output
 
 ```typescript
-runner.title("Major Section", 1)     // * Major Section *
-runner.title("Subsection", 2)        // ** Subsection **
+runner.title("Title the testing", 1) // * Title the testing *
+runner.title("Section", 2)           // ** Section **
 runner.title("Detail", 3)            // *** Detail ***
 ```
 
@@ -260,7 +267,7 @@ function main(workbook: ExcelScript.Workbook) {
 
 ---
 
-## Output Example (Verbosity: HEADER)
+## Output Example (Verbosity: SECTION)
 
 ```
 * Running All Tests *
@@ -277,7 +284,13 @@ function main(workbook: ExcelScript.Workbook) {
 
 - Each title uses `*` characters as prefix/suffix, repeated according to the `indent` parameter.
 - A title prints only if its `indent` is less than or equal to the runner's verbosity.
-- Example above shows only indent 1 and 2 titles, because verbosity is set to `HEADER` (1).
+- Example above shows only indent 1 and 2 titles, because verbosity is set to `SECTION` (2).
+
+If verbosity level is `HEADER` the output will be:
+```
+* Running All Tests *
+* All Tests Passed *
+```
 
 ---
 
@@ -288,6 +301,9 @@ function main(workbook: ExcelScript.Workbook) {
 - Works directly in the Office Scripts editor (Excel Online), as well as in VSCode/Node with your own mocks.
 
 ---
+
+## Additional Information
+- TypeDoc documentation: [TYPEDOC](docs/typedoc/index.html)
 
 ## License
 
