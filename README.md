@@ -11,7 +11,7 @@ Provides basic assertion capabilities and a structured test runner for easy test
 - **TestRunner**: Structured, hierarchical output with configurable verbosity levels (`OFF`, `HEADER`, `SECTION`, `SUBSECTION`).
 - **Compatible**: Runs on both Office Scripts and Node/TypeScript (for local or CI testing).
 - **Simple**: No dependencies, no decorators, no runtime imports.
-- **Extendable**: Add your own assertions or test conventions easily.
+- **Extensible**: Add your own assertions or test conventions easily.
 
 ---
 
@@ -20,19 +20,19 @@ Provides basic assertion capabilities and a structured test runner for easy test
 ### 1. Clone or copy this repo
 
 Place `unit-test-framework.ts` in your project.  
-(Optional: Use `main.ts` as a starting point for your test suite.)
+(Optional: Use `test/main.ts` as a starting point for your test suite.)
 
 ### 2. Write Tests
 
 Define a `TestRunner` and create a test class with static methods, e.g.:
 
 ```typescript
-runner = new TestRunner(TestRunner.VERBOSITY.SECTION)     // Define the test case runneer and verbosity level
-runner.title("Start Testing", 1)                          // Sending the title to console indicating the test started
-run.exec("Test Case for math", () => TestCase.math(), 1)  // Executing math method from TestCase
-runner.title("End Testing", 1)                            // Sending the title to console indicating the test ended
+const runner = new TestRunner(TestRunner.VERBOSITY.SECTION)     // Define the test case runner and verbosity level
+runner.title("Start Testing", 1)                                // Output title indicating the test started
+runner.exec("Test Case for math", () => TestCase.math(), 2)     // Execute math method from TestCase with section indentation level
+runner.title("End Testing", 1)                                  // Output title indicating the test ended
 
-// Class where to organize all test cases
+// Class to organize all test cases
 class TestCase {
   public static math(): void {
     Assert.equals(2 + 2, 4, "Addition works")
@@ -41,7 +41,7 @@ class TestCase {
   }
 }
 ```
-**Note:** `TestCase` class is not requied, just a way to organize all test cases to be executed via `TestRunner` class.
+**Note:** The `TestCase` class is not required, just a way to organize all test cases to be executed via the `TestRunner` class.
 
 ### 3. Run Tests
 
@@ -64,9 +64,9 @@ Assert.equals(actual, expected, "optional message")
 - For arrays, each element is checked for both type and value. For objects/arrays of objects, a deep check (using JSON.stringify) is performed.
 - Example:
   ```typescript
-  Assert.equals([1, 2, 3], [1, 2, 3], "Arrays are equal"). // Passes: Arrays are equals. Using optional message
-  Assert.equals([1, "2"], [1, 2])                          // Fails: type mismatch at index 1
-  Assert.equals([{x:1}], [{x:1}])                          // Passes: objects are deeply equal
+  Assert.equals([1, 2, 3], [1, 2, 3], "Arrays are equal") // Passes
+  Assert.equals([1, "2"], [1, 2])                         // Fails: type mismatch at index 1
+  Assert.equals([{x:1}], [{x:1}])                         // Passes: objects are deeply equal
   ```
 
 #### Inequality
@@ -164,6 +164,7 @@ Assert.doesNotThrow(
 **Note:**  
 `Assert.throws` requires **the throwing code to be passed as a function reference** (using `() => ...` or `function() { ... }`).  
 This allows the assertion method to execute your function and catch any exceptions inside its own logic.
+
 #### Fail Manually
 
 ```typescript
@@ -182,13 +183,13 @@ const runner = new TestRunner(TestRunner.VERBOSITY.SECTION) // or HEADER, OFF, S
 
 #### Verbosity Levels
 
-- `OFF` (0): No output.
-- `HEADER` (1): Only top-level section headers.
-- `SECTION` (2): Section and higher.
-- `SUBSECTION` (3): All titles, including subsections.
+- `OFF` (`0`): No output.
+- `HEADER` (`1`): Only top-level section headers.
+- `SECTION` (`2`): Section and higher.
+- `SUBSECTION` (`3`): All titles, including subsections.
 
 **How verbosity and indent work:**  
-- Each call to `runner.title("Title", indent)` prints the message with `indent` number of `*` as prefix and suffix (e.g., `** title **` for indent=2).
+- Each call to `runner.title("Title", indent)` prints the message with `indent` number of `*` as prefix and suffix (e.g., `** title **` for `indent=2`).
 - A title is only printed if its `indent` is **less than or equal to** the current verbosity.
 - This lets you control granularity of test output: higher verbosity shows more detail.
 
@@ -220,48 +221,96 @@ runner.getVerbosityLabel() // returns "HEADER", etc
 ## Example: Full Test Suite
 
 ```typescript
+// main test file for the unit test framework
+
 function main(workbook: ExcelScript.Workbook) {
   const runner = new TestRunner(TestRunner.VERBOSITY.SECTION)
   let success = false
   try {
     runner.title("Running All Tests", 1)
-    runner.exec("Math Test", () => {
-      Assert.equals(2 + 3, 5)
-      Assert.notEquals(2 * 2, 5)
-      Assert.equals([1, 2], [1, 2], "Array equality")
-      Assert.throws(() => { throw new TypeError("fail") }, TypeError, "fail", "Throws test")
-    }, 2)
-    runner.exec("Null/Undefined Test", () => {
-      Assert.isNull(null)
-      Assert.isNotNull(0)
-      Assert.isUndefined(undefined)
-      Assert.isNotUndefined("")
-      Assert.isDefined(123)
-    }, 2)
-    runner.exec("Instance Test", () => {
-      class Animal {}
-      class Dog extends Animal {}
-      const d = new Dog()
-      Assert.isInstanceOf(d, Dog)
-      Assert.isInstanceOf(d, Animal)
-      Assert.throws(() => Assert.isInstanceOf({}, Dog), AssertionError, undefined, "Throws if not instance")
-      Assert.isNotInstanceOf({}, Dog)
-    }, 2)
-    runner.exec("Throws/DoesNotThrow Test", () => {
-      const thrower = () => { throw new Error("fail") }
-      const nonThrower = () => { return 42 }
-      Assert.throws(thrower, Error, "fail", "Should throw error")
-      Assert.doesNotThrow(nonThrower, "Should not throw")
-    }, 2)
-    runner.exec("Type Test", () => {
-      Assert.assertType("abc", "string")
-      Assert.assertType(123, "number")
-      Assert.throws(() => Assert.assertType(123, "string"))
-    }, 3) // indent=3 (SUBSECTION)
+    runner.exec("Math Test", () => TestCase.math(), 2)
+    runner.exec("Null/Undefined Test", () => TestCase.nullUndefined(), 2)
+    runner.exec("Instance Test", () => TestCase.instance(), 2)
+    runner.exec("Throws/DoesNotThrow Test", () => TestCase.throwsDoesNotThrow(), 2)
+    runner.exec("Type Test", () => TestCase.type(), 2)
     success = true
   } finally {
     runner.title(success ? "All Tests Passed" : "Test Failure", 1)
   }
+}
+
+// Class to organize all test cases as static methods
+class TestCase {
+  public static math() {
+    Assert.equals(2 + 3, 5, "Addition works")
+    Assert.notEquals(2 * 2, 5, "Multiplication does not equal 5")
+    Assert.equals([1, 2], [1, 2], "Array equality")
+  }
+
+  public static nullUndefined() {
+    Assert.isNull(null, "Should be null")
+    Assert.isNotNull(0, "Zero is not null")
+    Assert.isUndefined(undefined, "Should be undefined")
+    Assert.isNotUndefined("", "Empty string is defined")
+    Assert.isDefined(123, "Number is defined")
+  }
+
+  public static instance() {
+    class Animal {}
+    class Dog extends Animal {}
+    const d = new Dog()
+    Assert.isInstanceOf(d, Dog, "Dog instance of Dog")
+    Assert.isInstanceOf(d, Animal, "Dog instance of Animal")
+    Assert.throws(() => Assert.isInstanceOf({}, Dog), AssertionError, undefined, "Throws if not instance")
+    Assert.isNotInstanceOf({}, Dog, "Plain object is not instance of Dog")
+  }
+
+  public static throwsDoesNotThrow() {
+    // --- All throws cases ---
+    // 1. Throws an Error with specific message
+    Assert.throws(() => { throw new Error("fail") }, Error, "fail", "Should throw Error")
+
+    // 2. Throws a TypeError
+    Assert.throws(() => { throw new TypeError("bad type") }, TypeError, "bad type", "Should throw TypeError")
+
+    // 3. Throws any error (not checking error type or message)
+    Assert.throws(() => { throw "custom error string" }, undefined, undefined, "Should throw any error (string)")
+
+    // 4. Throws AssertionError when an assertion fails inside
+    Assert.throws(() => Assert.isTrue(false, "Forced fail"), AssertionError, undefined, "Should throw AssertionError when assertion fails")
+
+    // 5. Using a function variable that throws
+    const failFunc = () => { throw new RangeError("range fail") }
+    Assert.throws(failFunc, RangeError, "range fail", "Should throw RangeError")
+
+    // --- All doesNotThrow cases ---
+    // 1. Does not throw (simple value)
+    Assert.doesNotThrow(() => 42, "Should not throw on returning 42")
+
+    // 2. Does not throw (returns undefined)
+    Assert.doesNotThrow(() => undefined, "Should not throw on returning undefined")
+
+    // 3. Does not throw (assertion that passes)
+    Assert.doesNotThrow(() => Assert.isTrue(true, "Should pass"), "Should not throw if assertion passes")
+
+    // 4. Using a function variable that does not throw
+    const safeFunc = () => "hello"
+    Assert.doesNotThrow(safeFunc, "Should not throw with safeFunc")
+  }
+
+  public static type() {
+    Assert.isType("abc", "string", "abc is string")
+    Assert.isType(123, "number", "123 is number")
+    Assert.throws(() => Assert.isType(123, "string"), undefined, undefined, "Throws if type mismatch")
+    Assert.isNotType("hello", "number", "String is not number")
+    Assert.isNotType(42, "string", "Number is not string")
+  }
+}
+
+// Make main available globally for Node/ts-node test environments
+if (typeof globalThis !== "undefined" && typeof main !== "undefined") {
+  // @ts-ignore
+  globalThis.main = main
 }
 ```
 
@@ -279,12 +328,14 @@ function main(workbook: ExcelScript.Workbook) {
 ** END Instance Test **
 ** START Throws/DoesNotThrow Test **
 ** END Throws/DoesNotThrow Test **
+** START Type Test **
+** END Type Test **
 * All Tests Passed *
 ```
 
 - Each title uses `*` characters as prefix/suffix, repeated according to the `indent` parameter.
 - A title prints only if its `indent` is less than or equal to the runner's verbosity.
-- Example above shows only indent 1 and 2 titles, because verbosity is set to `SECTION` (2).
+- Example above shows only indent `1` and `2` titles, because verbosity is set to `SECTION` (`2`).
 
 If verbosity level is `HEADER` the output will be:
 ```
@@ -303,6 +354,7 @@ If verbosity level is `HEADER` the output will be:
 ---
 
 ## Additional Information
+
 - TypeDoc documentation: [TYPEDOC](docs/typedoc/index.html)
 
 ## License
