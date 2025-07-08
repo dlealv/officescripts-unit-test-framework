@@ -355,7 +355,7 @@ If verbosity level is `HEADER` the output will be:
 
 ## Additional Information
 
-- TypeDoc documentation: [TYPEDOC](docs/typedoc/index.html)
+- TypeDoc documentation: [TYPEDOC](https://dlealv.github.io/officescripts-unit-test-framework/typedoc/)
 
 ## License
 
