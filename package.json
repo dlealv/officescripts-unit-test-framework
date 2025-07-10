@@ -28,8 +28,6 @@
   },
   "scripts": {
     "setup": "npm install && npx tsc --init",
-    "build": "npm run copy:ts",
-    "copy:ts": "mkdir -p dist && rsync -av --include='*.ts' --exclude='*' src/ dist/",
     "test": "npx ts-node --project tsconfig.json wrappers/main-wrapper.ts",
     "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug",
     "doc:ts:install": "npm install --save-dev typedoc",

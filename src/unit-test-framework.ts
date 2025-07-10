@@ -49,7 +49,8 @@ class AssertionError extends Error {
 /**
  * Utility class for writing unit-test-style assertions.
  * This class provides a set of static methods to perform common assertions
- * such as checking equality, type, and exceptions, etc.
+ * such as checking equality, type, and exceptions, etc. In case of assertion failure,
+ * an `AssertionError` is thrown and the user can provide a descriptive message.
  */
 class Assert {
 
@@ -100,6 +101,33 @@ class Assert {
     throw new AssertionError(`${PREFIX}Expected function to throw, but it did not.`)
   }
   // #endregion throws
+
+  // #region doesNotThrow
+  /**
+   * Asserts that the provided function does NOT throw an error.
+   * If an error is thrown, an `AssertionError` is thrown with the provided message or details of the error.
+   * @param fn - A function that is expected to NOT throw.
+   *             Must be passed as a function reference, e.g. `() => codeThatShouldNotThrow()`.
+   * @param message - (Optional) Prefix for the error message if the assertion fails.
+   * @return {void} - This method does not return a value.
+   * @throws AssertionError - If the function throws any error.
+   * @example
+   * ```ts
+   * Assert.doesNotThrow(() => {
+   *   const x = 1 + 1
+   * }, "Should not throw any error")
+   * ```
+   * @see {@link Assert.throws} for the opposite assertion.
+   */
+  public static doesNotThrow(fn: () => void, message: string = ""): void {
+    const PREFIX = message ? `${message}: ` : ""
+    try {
+      fn()
+    } catch (e) {
+      throw new AssertionError(`${PREFIX}Expected function not to throw, but it threw: ${Assert.safeStringify(e)}`)
+    }
+  }
+  // #endregion doesNotThrow
 
   // #region equals
  /**
@@ -172,6 +200,37 @@ class Assert {
     }
   }
   // #endregion equals
+
+  // #region notEquals
+  /**
+   * Asserts that two values are not equal (deep comparison).
+   * For arrays and objects, uses deep comparison (via `JSON.stringify`).
+   * Throws `AssertionError` if the values are equal.
+   * @param actual - The actual value.
+   * @param notExpected - The value that should NOT match.
+   * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {void} - This method does not return a value.
+   * @throws AssertionError - If values are equal.
+   * @example
+   * ```ts
+   * Assert.notEquals(1, 2, "Numbers should not be equal")
+   * Assert.notEquals([1, 2], [2, 1], "Arrays should not be equal")
+   * Assert.notEquals({ a: 1 }, { a: 2 }, "Objects should not be equal")
+   * Assert.notEquals(1, 2)
+   * Assert.notEquals([1,2], [2,1])
+   * ```
+   * @see {@link Assert.equals} for the opposite assertion.
+   */
+  public static notEquals<T>(actual: T, notExpected: T, message: string = ""): void {
+    const PREFIX = message ? `${message}: ` : ""
+    try {
+      Assert.equals(actual, notExpected, message)
+    } catch {
+      return // Passed: values are not equal
+    }
+    throw new AssertionError(`${PREFIX}Values should not be equal: (${Assert.safeStringify(actual)})`)
+  }
+  // #endregion notEquals
 
   // #region isNull
   /**
@@ -319,37 +378,10 @@ public static isNotType(
 }
 // #endregion isNotType
 
-  // #region doesNotThrow
-  /**
-   * Asserts that the provided function does NOT throw an error.
-   * If an error is thrown, an `AssertionError` is thrown with the provided message or details of the error.
-   * @param fn - A function that is expected to NOT throw.
-   *             Must be passed as a function reference, e.g. `() => codeThatShouldNotThrow()`.
-   * @param message - (Optional) Prefix for the error message if the assertion fails.
-   * @return {void} - This method does not return a value.
-   * @throws AssertionError - If the function throws any error.
-   * @example
-   * ```ts
-   * Assert.doesNotThrow(() => {
-   *   const x = 1 + 1
-   * }, "Should not throw any error")
-   * ```
-   * @see {@link Assert.throws} for the opposite assertion.
-   */
-  public static doesNotThrow(fn: () => void, message: string = ""): void {
-    const PREFIX = message ? `${message}: ` : ""
-    try {
-      fn()
-    } catch (e) {
-      throw new AssertionError(`${PREFIX}Expected function not to throw, but it threw: ${Assert.safeStringify(e)}`)
-    }
-  }
-  // #endregion doesNotThrow
-
   // #region isTrue
   /**
    * Asserts that the provided value is truthy.
-   * Throws AssertionError if the value is not truthy.
+   * Throws `AssertionError` if the value is not truthy.
    * @param value - The value to test for truthiness.
    * @param message - (Optional) Message to prefix in case of failure.
    * @returns {asserts value} - Narrows the type of 'value' to its original type if the assertion passes.
@@ -372,7 +404,7 @@ public static isNotType(
   // #region isFalse
   /**
    * Asserts that the provided value is falsy.
-   * Throws AssertionError if the value is not falsy.
+   * Throws `AssertionError` if the value is not falsy.
    * @param value - The value to test for falsiness.
    * @param message - (Optional) Message to prefix in case of failure.
    * @returns {void} - This method does not return a value.
@@ -399,7 +431,7 @@ public static isNotType(
   // #region isUndefined
   /**
    * Asserts that the given value is strictly `undefined`.
-   * Throws AssertionError if the value is not exactly `undefined`.
+   * Throws `AssertionError` if the value is not exactly `undefined`.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
    * @returns {asserts value is undefined} - Narrows the type of 'value' to `undefined` if the assertion passes.
@@ -471,37 +503,6 @@ public static isNotType(
   }
   // #endregion isDefined
 
-  // #region notEquals
-  /**
-   * Asserts that two values are not equal (deep comparison).
-   * For arrays and objects, uses deep comparison (via `JSON.stringify`).
-   * Throws `AssertionError` if the values are equal.
-   * @param actual - The actual value.
-   * @param notExpected - The value that should NOT match.
-   * @param message - (Optional) Message to prefix in case of failure.
-   * @returns {void} - This method does not return a value.
-   * @throws AssertionError - If values are equal.
-   * @example
-   * ````ts
-   * Assert.notEquals(1, 2, "Numbers should not be equal")
-   * Assert.notEquals([1, 2], [2, 1], "Arrays should not be equal")
-   * Assert.notEquals({ a: 1 }, { a: 2 }, "Objects should not be equal")
-   * Assert.notEquals(1, 2)
-   * Assert.notEquals([1,2], [2,1])
-   * ```
-   * @see {@link Assert.equals} for the opposite assertion.
-   */
-  public static notEquals<T>(actual: T, notExpected: T, message: string = ""): void {
-    const PREFIX = message ? `${message}: ` : ""
-    try {
-      Assert.equals(actual, notExpected, message)
-    } catch {
-      return // Passed: values are not equal
-    }
-    throw new AssertionError(`${PREFIX}Values should not be equal: (${Assert.safeStringify(actual)})`)
-  }
-  // #endregion notEquals
-
   // #region contains
   /**
    * Asserts that an array or string contains a specified value or substring.
@@ -558,7 +559,7 @@ public static isNotType(
    * Assert.isInstanceOf(instance, Object) // Passes, since all classes inherit from Object
    * Assert.isInstanceOf(42, MyClass) // Fails
    * ```
-   * @see Assert.isNotInstanceOf for the opposite assertion.
+   * @see {@link Assert.isNotInstanceOf} for the opposite assertion.
    */
   public static isInstanceOf(
     value: unknown,
@@ -727,7 +728,7 @@ public static isNotType(
  *   Assert.equals("test".length, 4)
  * })
  * function sum(a: number, b: number): number {return a + b}
- * const a = 1, b = 2;
+ * const a = 1, b = 2
  * runner.exec("Sum Test", () => {
  *   Assert.equals(sum(a, b), 3) // test passed
  * })
@@ -769,24 +770,57 @@ class TestRunner {
     this._verbosity = verbosity
   }
 
-  /** Returns the current verbosity level. */
+  /** Returns the current verbosity level. 
+   * This is useful for checking the current logging level
+   * and adjusting the output accordingly.
+   * @returns {number} - The current verbosity level as defined in 'TestRunner.VERBOSITY'.
+   * @example
+   * ```ts
+   * const runner = new TestRunner(TestRunner.VERBOSITY.HEADER)
+   * console.log(runner.getVerbosity()) // Outputs: 1
+   * ```
+   * @see {@link TestRunner.VERBOSITY} for available verbosity levels.
+   * @see {@link TestRunner.getVerbosityLabel} for the string label of the verbosity level.
+  */
   public getVerbosity(): typeof TestRunner.VERBOSITY[keyof typeof TestRunner.VERBOSITY] {
     return this._verbosity
   }
 
-  /** Returns the corresonding string label for the verbosity level. */
+  /** Returns the corresonding string label for the verbosity level. 
+   * This is useful for logging or debugging purposes.
+   * @returns {string} - The label corresponding to the current verbosity level.
+   * @example
+   * ```ts
+   * const runner = new TestRunner(TestRunner.VERBOSITY.HEADER)
+   * console.log(runner.getVerbosityLabel()) // Outputs: "HEADER"
+   * ```
+   * @see {@link TestRunner.VERBOSITY} for available verbosity levels.
+   * @see {@link TestRunner.getVerbosity} for the numeric verbosity level.
+  */
   public getVerbosityLabel() {
     return TestRunner.VERBOSITY_LABELS[this._verbosity]
   }
 
   /**
    * Conditionally prints a title message based on the configured verbosity.
-   * The title is prefixed and suffixed with '*' characters for visual structure.
-   * The number of '*' will depend on the indentation level, for 2 it shows
-   * '**' as prefix and suffix.
+   * The title is prefixed and suffixed with `*` characters for visual structure.
+   * The number of `*` will depend on the indentation level, for `2` it shows
+   * `**` as prefix and suffix.
    * @param msg - The message to display
    * @param indent - Indentation level (default: `1`). The indentation level is indicated
-   *                with the number of suffix '*'.
+   *                with the number of suffix `*`.
+   * @returns {void} - This method does not return a value.
+   * @example
+   * ```ts
+   * const runner = new TestRunner(TestRunner.VERBOSITY.HEADER)
+   * runner.title("My Test Section", 2) // Outputs: "** My Test Section **"
+   * ```
+   * @remarks This method is used to create structured output for test sections or titles.
+   *          It helps in organizing test output visually, especially when running multiple tests.
+   *          The indentation level allows for hierarchical organization of test cases.
+   * @see {@link TestRunner.VERBOSITY} for available verbosity levels.
+   * @see {@link TestRunner.getVerbosity} for the current verbosity level.
+   * @see {@link TestRunner.getVerbosityLabel} for the string label of the verbosity level.
    */
   public title(msg: string, indent: number = 1): void {
     if (indent <= this._verbosity) {
@@ -799,8 +833,11 @@ class TestRunner {
    * @param name - The name of the test case.
    * @param fn - The function containing the test logic. It should contain assertions using `Assert` methods.
    * @param indent - Indentation level for the title (default: `2`). The indentation level is indicated
-   *                 with the number of suffix '*'.
+   *                 with the number of suffix `*`.
    * @throws AssertionError - If an assertion fails within the test function.
+   * @returns {void} - This method does not return a value.
+   * @remarks This method is used to execute a test case, logging the start and end of the test with titles.
+   *          It is designed to work with the `Assert` class for assertions.
    * @example
    * ```ts
    * const runner = new TestRunner()
