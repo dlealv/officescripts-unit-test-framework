@@ -145,7 +145,7 @@ class AssertTest {
       Assert.isTrue(e.message === errMsg, "Did throw AssertionError but with wrong message for null")
     }
     if (!threw) {
-      throw new Error("Assert.isTrue(null) did not throw")
+      throw new Error("isTrue(null) did not throw")
     }
 
     // undefined
@@ -156,12 +156,12 @@ class AssertTest {
       threw = true
       errMsg = "isTrue: undefined should fail isTrue: Expected value to be truthy, but got (undefined)"
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for undefined")
+        throw new Error("isTrue(undefined): Did not throw AssertionError for undefined")
       }
-      Assert.isTrue(e.message === errMsg, "Did throw AssertionError but with wrong message for undefined")
+      Assert.isTrue(e.message === errMsg, "isTrue(undefined): Did throw AssertionError but with wrong message for undefined")
     }
     if (!threw) {
-      throw new Error("Assert.isTrue(undefined) did not throw")
+      throw new Error("isTrue(undefined) did not throw")
     }
 
     // false
@@ -172,12 +172,12 @@ class AssertTest {
       threw = true
       errMsg = "isTrue: false should fail isTrue: Expected value to be truthy, but got (false)"
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for false")
+        throw new Error("isTrue(false): Did not throw AssertionError for false")
       }
-      Assert.isTrue(e.message === errMsg, "Did throw AssertionError but with wrong message for false")
+      Assert.isTrue(e.message === errMsg, "isTrue(false): Did throw AssertionError but with wrong message for false")
     }
     if (!threw) {
-      throw new Error("Assert.isTrue(false) did not throw")
+      throw new Error("isTrue(false): did not throw")
     }
 
     // 0
@@ -188,28 +188,28 @@ class AssertTest {
       threw = true
       errMsg = "isTrue: 0 should fail isTrue: Expected value to be truthy, but got (0)"
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for 0")
+        throw new Error("isTrue(0): Did not throw AssertionError for 0")
       }
-      Assert.isTrue(e.message === errMsg, "Did throw AssertionError but with wrong message for 0")
+      Assert.isTrue(e.message === errMsg, "isTrue(0): Did throw AssertionError but with wrong message for 0")
     }
     if (!threw) {
-      throw new Error("Assert.isTrue(0) did not throw")
+      throw new Error("isTrue(0): did not throw")
     }
 
     // Empty string
     threw = false
     try {
-      Assert.isTrue("", "isTrue: '' should fail isTrue")
+      Assert.isTrue("", "isTrue(empty string): '' should fail isTrue")
     } catch (e) {
       threw = true
-      errMsg = "isTrue: '' should fail isTrue: Expected value to be truthy, but got (\"\")"
+      errMsg = "isTrue(empty string): '' should fail isTrue: Expected value to be truthy, but got (\"\")"
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for empty string")
+        throw new Error("isTrue(empty string): Did not throw AssertionError for empty string")
       }
-      Assert.isTrue(e.message === errMsg, "Did throw AssertionError but with wrong message for empty string")
+      Assert.isTrue(e.message === errMsg, "isTrue(empty string): Did throw AssertionError but with wrong message for empty string")
     }
     if (!threw) {
-      throw new Error("Assert.isTrue('') did not throw")
+      throw new Error("isTrue(empty string): did not throw")
     }
   }
 
@@ -225,68 +225,68 @@ class AssertTest {
     // Negative: should throw for truthy values
     let threw = false
     try {
-      Assert.isFalse(true, "isFalse: true should fail")
+      Assert.isFalse(true, "isFalse(true): true should fail")
     } catch (e) {
       threw = true
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for true")
+        throw new Error("isFalse(true): Did not throw AssertionError for true")
       }
     }
     if (!threw) {
-      throw new Error("Assert.isFalse(true) did not throw")
+      throw new Error("isFalse(true): did not throw")
     }
 
     threw = false
     try {
-      Assert.isFalse(1, "isFalse: 1 should fail")
+      Assert.isFalse(1, "isFalse(1): 1 should fail")
     } catch (e) {
       threw = true
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for 1")
+        throw new Error("isFalse(1): Did not throw AssertionError for 1")
       }
     }
     if (!threw) {
-      throw new Error("Assert.isFalse(1) did not throw")
+      throw new Error("isFalse(1): did not throw")
     }
 
     threw = false
     try {
-      Assert.isFalse("non-empty", "isFalse: 'non-empty' should fail")
+      Assert.isFalse("non-empty", "isFalse(non-empty): 'non-empty' should fail")
     } catch (e) {
       threw = true
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for 'non-empty'")
+        throw new Error("isFalse(non-empty): Did not throw AssertionError for 'non-empty'")
       }
     }
     if (!threw) {
-      throw new Error("Assert.isFalse('non-empty') did not throw")
+      throw new Error("isFalse(non-empty): did not throw")
     }
 
     // Optional: add for [], {}
     threw = false
     try {
-      Assert.isFalse([], "isFalse: [] should fail")
+      Assert.isFalse([], "isFalse([]): [] should fail")
     } catch (e) {
       threw = true
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for []")
+        throw new Error("isFalse([]): Did not throw AssertionError for []")
       }
     }
     if (!threw) {
-      throw new Error("Assert.isFalse([]) did not throw")
+      throw new Error("isFalse([]): did not throw")
     }
 
     threw = false
     try {
-      Assert.isFalse({}, "isFalse: {} should fail")
+      Assert.isFalse({}, "isFalse({}): {} should fail")
     } catch (e) {
       threw = true
       if (!(e instanceof AssertionError)) {
-        throw new Error("Did not throw AssertionError for {}")
+        throw new Error("isFalse({}): Did not throw AssertionError for {}")
       }
     }
     if (!threw) {
-      throw new Error("Assert.isFalse({}) did not throw")
+      throw new Error("isFalse({}): did not throw")
     }
   }
 
@@ -337,7 +337,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "throws: did not throw AssertionError when function did not throw")
     }
     if (!threw) {
-      throw new Error("Assert.throws did not throw when function did not throw")
+      throw new Error("throws: did not throw when function did not throw")
     }
 
     // Negative: should throw AssertionError if the error type does not match
@@ -354,7 +354,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "throws: did not throw AssertionError when error type did not match")
     }
     if (!threw) {
-      throw new Error("Assert.throws did not throw when error type did not match")
+      throw new Error("throws: did not throw when error type did not match")
     }
 
     // Negative: should throw AssertionError if the error message does not match
@@ -371,7 +371,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "throws: did not throw AssertionError when error message did not match")
     }
     if (!threw) {
-      throw new Error("Assert.throws did not throw when error message did not match")
+      throw new Error("throws: did not throw when error message did not match")
     }
 
     // Negative: should throw AssertionError if thrown value is not an Error
@@ -388,7 +388,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "throws: did not throw AssertionError when thrown value was not Error")
     }
     if (!threw) {
-      throw new Error("Assert.throws did not throw when thrown value was not Error")
+      throw new Error("throws: did not throw when thrown value was not Error")
     }
   }
 
@@ -416,7 +416,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "doesNotThrow: did not throw AssertionError when function threw")
     }
     if (!threw) {
-      throw new Error("Assert.doesNotThrow did not throw when function threw")
+      throw new Error("doesNotThrow: did not throw when function threw")
     }
 
     // Negative: thrown value is not an Error (should still catch)
@@ -431,7 +431,7 @@ class AssertTest {
       Assert.isTrue(e instanceof AssertionError, "doesNotThrow: did not throw AssertionError for non-Error thrown value")
     }
     if (!threw) {
-      throw new Error("Assert.doesNotThrow did not throw when thrown value was not Error")
+      throw new Error("doesNotThrow: did not throw when thrown value was not Error")
     }
   }
 
@@ -514,32 +514,32 @@ class AssertTest {
     // Positive cases: should not throw for correct types
     Assert.doesNotThrow(
       () => { Assert.isType("hello", "string") },
-      "assertType: should not throw for string"
+      "isType: should not throw for string"
     )
 
     Assert.doesNotThrow(
       () => { Assert.isType(42, "number") },
-      "assertType: should not throw for number"
+      "isType: should not throw for number"
     )
 
     Assert.doesNotThrow(
       () => { Assert.isType(true, "boolean") },
-      "assertType: should not throw for boolean"
+      "isType: should not throw for boolean"
     )
 
     Assert.doesNotThrow(
       () => { Assert.isType({}, "object") },
-      "assertType: should not throw for object"
+      "isType: should not throw for object"
     )
 
     Assert.doesNotThrow(
       () => { Assert.isType(undefined, "undefined") },
-      "assertType: should not throw for undefined"
+      "isType: should not throw for undefined"
     )
 
     Assert.doesNotThrow(
       () => { Assert.isType(Symbol("s"), "symbol") },
-      "assertType: should not throw for symbol"
+      "isType: should not throw for symbol"
     )
 
     // Negative cases: should throw for wrong types
@@ -547,72 +547,72 @@ class AssertTest {
       () => { Assert.isType("hello", "number") },
       AssertionError,
       `Expected type 'number', but got 'string': ("hello")`,
-      "assertType: should throw for string as number"
+      "isType: should throw for string as number"
     )
 
     Assert.throws(
       () => { Assert.isType(42, "string") },
       AssertionError,
       `Expected type 'string', but got 'number': (42)`,
-      "assertType: should throw for number as string"
+      "isType: should throw for number as string"
     )
 
     Assert.throws(
       () => { Assert.isType(false, "object") },
       AssertionError,
       `Expected type 'object', but got 'boolean': (false)`,
-      "assertType: should throw for boolean as object"
+      "isType: should throw for boolean as object"
     )
 
     Assert.throws(
       () => { Assert.isType({}, "number") },
       AssertionError,
       `Expected type 'number', but got 'object': ({})`,
-      "assertType: should throw for object as number"
+      "isType: should throw for object as number"
     )
 
     Assert.throws(
       () => { Assert.isType(undefined, "object") },
       AssertionError,
       `Expected type 'object', but got 'undefined': (undefined)`,
-      "assertType: should throw for undefined as object"
+      "isType: should throw for undefined as object"
     )
   }
 
   /** Test Assert.isNotType method. */
   public static isNotType(): void {
     // Positive cases (should NOT throw)
-    Assert.isNotType("hello", "number", "String is not number")
-    Assert.isNotType(42, "string", "Number is not string")
-    Assert.isNotType(true, "object", "Boolean is not object")
-    Assert.isNotType(undefined, "boolean", "undefined is not boolean")
-    Assert.isNotType(Symbol("sym"), "number", "Symbol is not number")
-    Assert.isNotType(() => { }, "object", "Function is not object")
+    Assert.isNotType("hello", "number", "isNotType: String is not number")
+    Assert.isNotType(42, "string", "isNotType: Number is not string")
+    Assert.isNotType(true, "object", "isNotType: Boolean is not object")
+    Assert.isNotType(undefined, "boolean", "isNotType: undefined is not boolean")
+    Assert.isNotType(Symbol("sym"), "number", "isNotType: Symbol is not number")
+    Assert.isNotType(() => { }, "object", "isNotType: Function is not object")
 
     // Negative cases (should throw)
     Assert.throws(
       () => Assert.isNotType("test", "string"),
       AssertionError,
       undefined,
-      "Should throw: type matches string"
+      "isNotType: Should throw: type matches string"
     )
     Assert.throws(
       () => Assert.isNotType(123, "number"),
       AssertionError,
       undefined,
-      "Should throw: type matches number"
+      "isNotType: Should throw: type matches number"
     )
     Assert.throws(
       () => Assert.isNotType({}, "object"),
       AssertionError,
       undefined,
-      "Should throw: type matches object"
+      "isNotType: Should throw: type matches object"
     )
     Assert.throws(
       () => Assert.isNotType(null, "object"),
       AssertionError,
       undefined,
-      "null is typeof object in JS"
+      "isNotType: null is typeof object in JS"
     )
   }
 
@@ -621,49 +621,49 @@ class AssertTest {
     // Positive: should not throw for equal numbers
     Assert.doesNotThrow(
       () => { Assert.equals(5, 5, "equals: numbers should match") },
-      "equals: should not throw for equal numbers"
+      "equalsPrimitivesAndObjects: should not throw for equal numbers"
     )
 
     // Positive: should not throw for equal strings
     Assert.doesNotThrow(
       () => { Assert.equals("abc", "abc", "equals: strings should match") },
-      "equals: should not throw for equal strings"
+      "equalsPrimitivesAndObjects: should not throw for equal strings"
     )
 
     // Positive: should not throw for equal booleans
     Assert.doesNotThrow(
       () => { Assert.equals(true, true, "equals: booleans should match") },
-      "equals: should not throw for equal booleans"
+      "equalsPrimitivesAndObjects: should not throw for equal booleans"
     )
 
     // Positive: should not throw for equal objects (deep, via JSON.stringify)
     Assert.doesNotThrow(
       () => { Assert.equals({ a: 1, b: "x" }, { a: 1, b: "x" }, "equals: objects should match") },
-      "equals: should not throw for equal objects"
+      "equalsPrimitivesAndObjects: should not throw for equal objects"
     )
 
     // Positive: should not throw for null equality
     Assert.doesNotThrow(
       () => { Assert.equals(null, null, "equals: nulls should match") },
-      "equals: should not throw for null equality"
+      "equalsPrimitivesAndObjects: should not throw for null equality"
     )
 
     // Positive: should not throw for equal arrays of numbers
     Assert.doesNotThrow(
       () => { Assert.equals([1, 2, 3], [1, 2, 3], "equals: arrays of numbers should match") },
-      "equals: should not throw for equal arrays of numbers"
+      "equalsPrimitivesAndObjects: should not throw for equal arrays of numbers"
     )
 
     // Positive: should not throw for equal arrays of objects
     Assert.doesNotThrow(
       () => { Assert.equals([{ x: 1 }, { y: 2 }], [{ x: 1 }, { y: 2 }], "equals: arrays of objects should match") },
-      "equals: should not throw for equal arrays of objects"
+      "equalsPrimitivesAndObjects: should not throw for equal arrays of objects"
     )
 
     // Positive: should not throw for nested arrays/objects
     Assert.doesNotThrow(
       () => { Assert.equals([{ a: [1, 2] }, { b: 3 }], [{ a: [1, 2] }, { b: 3 }], "equals: nested arrays/objects should match") },
-      "equals: should not throw for nested arrays/objects equality"
+      "equalsPrimitivesAndObjects: should not throw for nested arrays/objects equality"
     )
 
     // Negative: should throw for different numbers
@@ -671,7 +671,7 @@ class AssertTest {
       () => { Assert.equals(5, 6, "equals: numbers should not match") },
       AssertionError,
       "equals: numbers should not match: Assertion failed: actual (5 : number) !== expected (6 : number)",
-      "equals: should throw for different numbers"
+      "equalsPrimitivesAndObjects: should throw for different numbers"
     )
 
     // Negative: should throw for different strings
@@ -679,7 +679,7 @@ class AssertTest {
       () => { Assert.equals("abc", "def", "equals: strings should not match") },
       AssertionError,
       "equals: strings should not match: Assertion failed: actual (\"abc\" : string) !== expected (\"def\" : string)",
-      "equals: should throw for different strings"
+      "equalsPrimitivesAndObjects: should throw for different strings"
     )
 
     // Negative: should throw for different booleans
@@ -687,7 +687,7 @@ class AssertTest {
       () => { Assert.equals(true, false, "equals: booleans should not match") },
       AssertionError,
       "equals: booleans should not match: Assertion failed: actual (true : boolean) !== expected (false : boolean)",
-      "equals: should throw for different booleans"
+      "equalsPrimitivesAndObjects: should throw for different booleans"
     )
 
     // Negative: should throw for different objects (deep, via JSON.stringify)
@@ -695,7 +695,7 @@ class AssertTest {
       () => { Assert.equals({ a: 1, b: "x" }, { a: 2, b: "x" }, "equals: objects should not match") },
       AssertionError,
       "equals: objects should not match: Assertion failed: actual ({\"a\":1,\"b\":\"x\"}) !== expected ({\"a\":2,\"b\":\"x\"})",
-      "equals: should throw for different objects"
+      "equalsPrimitivesAndObjects: should throw for different objects"
     )
 
     // Negative: should throw for different arrays (length mismatch)
@@ -703,7 +703,7 @@ class AssertTest {
       () => { Assert.equals([1, 2], [1, 2, 3], "equals: arrays length should not match") },
       AssertionError,
       "equals: arrays length should not match: Array length mismatch: actual (2) !== expected (3)",
-      "equals: should throw for arrays with different lengths"
+      "equalsPrimitivesAndObjects: should throw for arrays with different lengths"
     )
 
     // Negative: should throw for different arrays (element mismatch)
@@ -711,7 +711,7 @@ class AssertTest {
       () => { Assert.equals([1, 2, 4], [1, 2, 3], "equals: arrays element should not match") },
       AssertionError,
       "equals: arrays element should not match: Array value mismatch at index 2: actual (4) !== expected (3)",
-      "equals: should throw for arrays with different elements"
+      "equalsPrimitivesAndObjects: should throw for arrays with different elements"
     )
 
     // Negative: should throw for arrays of objects (element mismatch)
@@ -719,7 +719,7 @@ class AssertTest {
       () => { Assert.equals([{ x: 1 }], [{ x: 2 }], "equals: arrays of objects should not match") },
       AssertionError,
       "equals: arrays of objects should not match: Array object value mismatch at index 0: actual ({\"x\":1}) !== expected ({\"x\":2})",
-      "equals: should throw for arrays of objects with different field values"
+      "equalsPrimitivesAndObjects: should throw for arrays of objects with different field values"
     )
 
     // Negative: should throw for null vs undefined
@@ -727,7 +727,7 @@ class AssertTest {
       () => { Assert.equals(null, undefined, "equals: null vs undefined should not match") },
       AssertionError,
       "equals: null vs undefined should not match: Assertion failed: actual (null) !== expected (undefined)",
-      "equals: should throw for null vs undefined"
+      "equalsPrimitivesAndObjects: should throw for null vs undefined"
     )
 
     // Negative: should throw for object vs array
@@ -735,7 +735,7 @@ class AssertTest {
       () => { Assert.equals({ 0: 1 }, [1], "equals: object vs array should not match") },
       AssertionError,
       "equals: object vs array should not match: Assertion failed: actual ({\"0\":1}) !== expected ([1])",
-      "equals: should throw for object vs array"
+      "equalsPrimitivesAndObjects: should throw for object vs array"
     )
 
     // Negative: should throw for number vs string
@@ -743,7 +743,7 @@ class AssertTest {
       () => { Assert.equals<unknown>(1, "1", "equals: number vs string should not match") },
       AssertionError,
       "equals: number vs string should not match: Assertion failed: actual (1 : number) !== expected (\"1\" : string)",
-      "equals: should throw for number vs string"
+      "equalsPrimitivesAndObjects: should throw for number vs string"
     )
 
     // Negative: should throw for nested array/object value mismatch
@@ -751,7 +751,7 @@ class AssertTest {
       () => { Assert.equals([{ a: [1, 2] }, { b: 3 }], [{ a: [1, 2] }, { b: 4 }], "equals: nested arrays/objects should not match") },
       AssertionError,
       "equals: nested arrays/objects should not match: Array object value mismatch at index 1: actual ({\"b\":3}) !== expected ({\"b\":4})",
-      "equals: should throw for nested array/object value mismatch"
+      "equalsPrimitivesAndObjects: should throw for nested array/object value mismatch"
     )
   }
 
@@ -760,19 +760,19 @@ class AssertTest {
     // Positive: should not throw for equal number arrays
     Assert.doesNotThrow(
       () => { Assert.equals([1, 2, 3], [1, 2, 3], "equals: number arrays should match") },
-      "equals: should not throw for equal number arrays"
+      "equalsArrays: should not throw for equal number arrays"
     )
 
     // Positive: should not throw for equal string arrays
     Assert.doesNotThrow(
       () => { Assert.equals(["a", "b"], ["a", "b"], "equals: string arrays should match") },
-      "equals: should not throw for equal string arrays"
+      "equalsArrays: should not throw for equal string arrays"
     )
 
     // Positive: should not throw for arrays of equal objects
     Assert.doesNotThrow(
       () => { Assert.equals([{ x: 1 }, { y: 2 }], [{ x: 1 }, { y: 2 }], "equals: array of objects should match") },
-      "equals: should not throw for equal array of objects"
+      "equalsArrays: should not throw for equal array of objects"
     )
 
     // Negative: should throw for arrays with different lengths
@@ -780,7 +780,7 @@ class AssertTest {
       () => { Assert.equals([1, 2], [1, 2, 3], "equals: arrays of different length") },
       AssertionError,
       "equals: arrays of different length: Array length mismatch: actual (2) !== expected (3)",
-      "equals: should throw for arrays of different length"
+      "equalsArrays: should throw for arrays of different length"
     )
 
     // Negative: should throw for arrays with different values
@@ -788,7 +788,7 @@ class AssertTest {
       () => { Assert.equals([1, 2, 3], [1, 2, 4], "equals: arrays with one different value") },
       AssertionError,
       "equals: arrays with one different value: Array value mismatch at index 2: actual (3) !== expected (4)",
-      "equals: should throw for arrays with different values"
+      "equalsArrays: should throw for arrays with different values"
     )
 
     // Negative: should throw for arrays of objects with different values
@@ -796,7 +796,7 @@ class AssertTest {
       () => { Assert.equals([{ x: 1 }], [{ x: 2 }], "equals: arrays of objects with different values") },
       AssertionError,
       "equals: arrays of objects with different values: Array object value mismatch at index 0: actual ({\"x\":1}) !== expected ({\"x\":2})",
-      "equals: should throw for arrays of objects with different values"
+      "equalsArrays: should throw for arrays of objects with different values"
     )
 
     // Negative: should throw for arrays with type mismatch
@@ -804,7 +804,7 @@ class AssertTest {
       () => { Assert.equals([1, 2], ["1", "2"], "equals: arrays with type mismatch") },
       AssertionError,
       "equals: arrays with type mismatch: Array type mismatch at index 0: actual (1 : number) !== expected (\"1\" : string)",
-      "equals: should throw for arrays with type mismatch"
+      "equalsArrays: should throw for arrays with type mismatch"
     )
   }
 
@@ -820,16 +820,16 @@ class AssertTest {
 
     // Inherited instance
     const b = new B()
-    Assert.isInstanceOf(b, A, "b should be instance of A (inherited)")
-    Assert.isInstanceOf(b, B, "b should be instance of B")
+    Assert.isInstanceOf(b, A, "isInstanceOf: b should be instance of A (inherited)")
+    Assert.isInstanceOf(b, B, "isInstanceOf: b should be instance of B")
 
     // Negative: instance of a different class
     const c = new C()
     Assert.throws(
-      () => Assert.isInstanceOf(c, A, "c should NOT be instance of A"),
+      () => Assert.isInstanceOf(c, A, "isInstanceOf: c should NOT be instance of A"),
       AssertionError,
       undefined,
-      "isInstanceOf: C is not A"
+      "isInstanceOf: isInstanceOf: C is not A"
     )
 
     // Negative: primitive value is not an instance of any class
@@ -876,15 +876,15 @@ class AssertTest {
     const z = new Z()
 
     // x should not be instance of Y or Z
-    Assert.isNotInstanceOf(x, Y, "x should NOT be instance of Y")
-    Assert.isNotInstanceOf(x, Z, "x should NOT be instance of Z")
+    Assert.isNotInstanceOf(x, Y, "isNotInstanceOf: x should NOT be instance of Y")
+    Assert.isNotInstanceOf(x, Z, "isNotInstanceOf: x should NOT be instance of Z")
 
     // b should not be instance of Z
-    Assert.isNotInstanceOf(y, Z, "y should NOT be instance of Z")
+    Assert.isNotInstanceOf(y, Z, "isNotInstanceOf: y should NOT be instance of Z")
 
     // z should not be instance of X or Y
-    Assert.isNotInstanceOf(z, X, "z should NOT be instance of X")
-    Assert.isNotInstanceOf(z, Y, "z should NOT be instance of Y")
+    Assert.isNotInstanceOf(z, X, "isNotInstanceOf: z should NOT be instance of X")
+    Assert.isNotInstanceOf(z, Y, "isNotInstanceOf: z should NOT be instance of Y")
 
     // Negative: x is instance of X
     Assert.throws(
@@ -911,9 +911,9 @@ class AssertTest {
     )
 
     // Non-object: primitives, null, undefined are never instances
-    Assert.isNotInstanceOf(null, X, "null should NOT be instance of X")
-    Assert.isNotInstanceOf(undefined, X, "undefined should NOT be instance of X")
-    Assert.isNotInstanceOf(123, X, "primitive should NOT be instance of X")
+    Assert.isNotInstanceOf(null, X, "isNotInstanceOf: null should NOT be instance of X")
+    Assert.isNotInstanceOf(undefined, X, "isNotInstanceOf: undefined should NOT be instance of X")
+    Assert.isNotInstanceOf(123, X, "isNotInstanceOf: primitive should NOT be instance of X")
 
     // Negative: constructor is not a function
     Assert.throws(
@@ -926,114 +926,114 @@ class AssertTest {
 
     /** Test Assert.isUndefined method. */
   public static isUndefined(): void {
-    Assert.isUndefined(undefined, "undefined is undefined")
-    Assert.isUndefined(void 0, "void 0 is undefined")
+    Assert.isUndefined(undefined, "isUndefined: undefined is undefined")
+    Assert.isUndefined(void 0, "isUndefined: void 0 is undefined")
     Assert.throws(
       () => Assert.isUndefined(null),
       AssertionError,
       undefined,
-      "null is not undefined"
+      "isUndefined: null is not undefined"
     )
     Assert.throws(
       () => Assert.isUndefined(0),
       AssertionError,
       undefined,
-      "0 is not undefined"
+      "isUndefined: 0 is not undefined"
     )
     Assert.throws(
       () => Assert.isUndefined(""),
       AssertionError,
       undefined,
-      "empty string is not undefined"
+      "isUndefined: empty string is not undefined"
     )
     Assert.throws(
       () => Assert.isUndefined(false),
       AssertionError,
       undefined,
-      "false is not undefined"
+      "isUndefined: false is not undefined"
     )
   }
 
   /** Test Assert.isNotUndefined and isDefined methods. */
   public static isNotUndefined_and_isDefined(): void {
-    Assert.isNotUndefined(0, "0 is not undefined")
-    Assert.isNotUndefined(null, "null is not undefined")
-    Assert.isNotUndefined(false, "false is not undefined")
-    Assert.isDefined(1, "1 is defined")
-    Assert.isDefined("", "empty string is defined")
-    Assert.isDefined(null, "null is defined")
+    Assert.isNotUndefined(0, "isNotUndefined_and_isDefined: 0 is not undefined")
+    Assert.isNotUndefined(null, "isNotUndefined_and_isDefined: null is not undefined")
+    Assert.isNotUndefined(false, "isNotUndefined_and_isDefined: false is not undefined")
+    Assert.isDefined(1, "isNotUndefined_and_isDefined: 1 is defined")
+    Assert.isDefined("", "isNotUndefined_and_isDefined: empty string is defined")
+    Assert.isDefined(null, "isNotUndefined_and_isDefined: null is defined")
     Assert.throws(
       () => Assert.isNotUndefined(undefined),
       AssertionError,
       undefined,
-      "undefined should throw"
+      "isNotUndefined_and_isDefined: undefined should throw"
     )
     Assert.throws(
       () => Assert.isDefined(undefined),
       AssertionError,
       undefined,
-      "undefined should throw"
+      "isNotUndefined_and_isDefined: undefined should throw"
     )
   }
 
   /** Test Assert.notEquals method. */
   public static notEquals(): void {
-    Assert.notEquals(1, 2, "1 !== 2")
-    Assert.notEquals("foo", "bar", "different strings")
-    Assert.notEquals([1, 2], [2, 1], "different arrays")
-    Assert.notEquals({ a: 1 }, { a: 2 }, "different objects")
+    Assert.notEquals(1, 2, "notEquals: 1 !== 2")
+    Assert.notEquals("foo", "bar", "notEquals: different strings")
+    Assert.notEquals([1, 2], [2, 1], "notEquals: different arrays")
+    Assert.notEquals({ a: 1 }, { a: 2 }, "notEquals: different objects")
     Assert.throws(
       () => Assert.notEquals(1, 1),
       AssertionError,
       undefined,
-      "1 == 1 should throw"
+      "notEquals: 1 == 1 should throw"
     )
     Assert.throws(
       () => Assert.notEquals("abc", "abc"),
       AssertionError,
       undefined,
-      "identical strings"
+      "notEquals: identical strings"
     )
     Assert.throws(
       () => Assert.notEquals(null, null),
       AssertionError,
       undefined,
-      "null == null"
+      "notEquals: null == null"
     )
     Assert.throws(
       () => Assert.notEquals([1, 2], [1, 2]),
       AssertionError,
       undefined,
-      "equal arrays"
+      "notEquals: equal arrays"
     )
     Assert.throws(
       () => Assert.notEquals({ x: 1 }, { x: 1 }),
       AssertionError,
       undefined,
-      "deep equal objects"
+      "notEquals: deep equal objects"
     )
   }
 
   /** Test Assert.contains method for arrays and strings. */
   public static contains(): void {
     // Array contains
-    Assert.contains([1, 2, 3], 2, "array contains 2")
-    Assert.contains(["a", "b"], "a", "array contains 'a'")
+    Assert.contains([1, 2, 3], 2, "contains: array contains 2")
+    Assert.contains(["a", "b"], "a", "contains: array contains 'a'")
     Assert.throws(
       () => Assert.contains([1, 2, 3], 4),
       AssertionError,
       undefined,
-      "array does not contain 4"
+      "contains: array does not contain 4"
     )
 
     // String contains
-    Assert.contains("hello world", "world", "'hello world' contains 'world'")
-    Assert.contains("abc", "a", "'abc' contains 'a'")
+    Assert.contains("hello world", "world", "contains: 'hello world' contains 'world'")
+    Assert.contains("abc", "a", "contains: 'abc' contains 'a'")
     Assert.throws(
       () => Assert.contains("abc", "z"),
       AssertionError,
       undefined,
-      "'abc' does not contain 'z'"
+      "contains: 'abc' does not contain 'z'"
     )
 
     // Error: not array or string
@@ -1041,13 +1041,13 @@ class AssertTest {
       () => Assert.contains(123 as unknown as string, "1"),
       AssertionError,
       undefined,
-      "non-array/string container"
+      "contains: non-array/string container"
     )
     Assert.throws(
       () => Assert.contains({ x: 1 } as unknown as string, "x"),
       AssertionError,
       undefined,
-      "object is not valid container"
+      "contains: object is not valid container"
     )
   }
 
@@ -1071,7 +1071,7 @@ class AssertSafeStringifyTest {
       () => { Assert.equals(obj, {}) },
       AssertionError,
       undefined,
-      "safeStringify: should handle object with throwing toString"
+      "safeStringify(throwsToString): should handle object with throwing toString"
     )
   }
 
@@ -1081,7 +1081,7 @@ class AssertSafeStringifyTest {
       () => { Assert.isNotNull(null) },
       AssertionError,
       'Expected value not to be null, but got (null)',
-      "safeStringify: null should stringify to 'null'"
+      "safeStringify(null): null should stringify to 'null'"
     )
   }
 
@@ -1094,7 +1094,7 @@ class AssertSafeStringifyTest {
       () => { Assert.equals(a, {}) },
       AssertionError,
       undefined,
-      "safeStringify: should handle circular reference"
+      "safeStringify(circularReference): should handle circular reference"
     )
   }
 
@@ -1106,7 +1106,7 @@ class AssertSafeStringifyTest {
       () => { Assert.isNull(sym) },
       AssertionError,
       undefined,
-      "safeStringify: should handle symbol"
+      "safeStringify(symbolValue): should handle symbol"
     )
   }
 
@@ -1117,7 +1117,7 @@ class AssertSafeStringifyTest {
       () => { Assert.isNull(f) },
       AssertionError,
       undefined,
-      "safeStringify: should handle function"
+      "safeStringify(functionValue): should handle function"
     )
   }
 
@@ -1127,7 +1127,7 @@ class AssertSafeStringifyTest {
       () => { Assert.isNull("abc") },
       AssertionError,
       'Expected value to be null, but got ("abc")',
-      "safeStringify: string should be quoted"
+      "safeStringify(stringIsQuoted): string should be quoted"
     )
   }
 
@@ -1137,25 +1137,25 @@ class AssertSafeStringifyTest {
       () => { Assert.isNull(0) },
       AssertionError,
       'Expected value to be null, but got (0)',
-      "safeStringify: should stringify 0"
+      "safeStringify(falsyValues): should stringify 0"
     )
     Assert.throws(
       () => { Assert.isNull(false) },
       AssertionError,
       'Expected value to be null, but got (false)',
-      "safeStringify: should stringify false"
+      "safeStringify(falsyValues): should stringify false"
     )
     Assert.throws(
       () => { Assert.isNull(undefined) },
       AssertionError,
       'Expected value to be null, but got (undefined)',
-      "safeStringify: should stringify undefined"
+      "safeStringify(falsyValues): should stringify undefined"
     )
     Assert.throws(
       () => { Assert.isNull(NaN) },
       AssertionError,
       'Expected value to be null, but got (NaN)',
-      "safeStringify: should stringify NaN"
+      "safeStringify(falsyValues): should stringify NaN"
     )
   }
 }
@@ -1216,7 +1216,7 @@ class TestRunnerTest {
     runnerOff.title("This should not be visible", 1)
     runnerOff.title("This should not be visible either", 2)
     if (canCapture) {
-      Assert.equals(logs.length, 0, "runnerOff should not print any titles")
+      Assert.equals(logs.length, 0, "titlesAndExec: runnerOff should not print any titles")
     }
 
     // Should print only at indent 1
@@ -1224,8 +1224,8 @@ class TestRunnerTest {
     runnerHeader.title("Header Only", 1)
     runnerHeader.title("Section (should not print)", 2)
     if (canCapture) {
-      Assert.equals(logs.length, 1, "runnerHeader should print only one title")
-      Assert.isTrue(logs[0].indexOf("Header Only") !== -1, "runnerHeader output contains 'Header Only'")
+      Assert.equals(logs.length, 1, "titlesAndExec: runnerHeader should print only one title")
+      Assert.isTrue(logs[0].indexOf("Header Only") !== -1, "titlesAndExec: runnerHeader output contains 'Header Only'")
     }
 
     // Should print both
@@ -1233,9 +1233,9 @@ class TestRunnerTest {
     runnerSection.title("Header", 1)
     runnerSection.title("Section", 2)
     if (canCapture) {
-      Assert.equals(logs.length, 2, "runnerSection should print two titles")
-      Assert.isTrue(logs[0].indexOf("Header") !== -1, "runnerSection output contains 'Header'")
-      Assert.isTrue(logs[1].indexOf("Section") !== -1, "runnerSection output contains 'Section'")
+      Assert.equals(logs.length, 2, "titlesAndExec: runnerSection should print two titles")
+      Assert.isTrue(logs[0].indexOf("Header") !== -1, "titlesAndExec: runnerSection output contains 'Header'")
+      Assert.isTrue(logs[1].indexOf("Section") !== -1, "titlesAndExec: runnerSection output contains 'Section'")
     }
 
     // Restore original log for exec tests (so you can see assertion output if running interactively)
@@ -1245,7 +1245,7 @@ class TestRunnerTest {
 
     // Test exec with a simple passing function
     runnerHeader.exec("Exec Pass", () => {
-      Assert.equals(1, 1, "Exec should run this test")
+      Assert.equals(1, 1, "titlesAndExec: Exec should run this test")
     }, 2)
 
     // Test exec with a function that fails
@@ -1253,7 +1253,7 @@ class TestRunnerTest {
       () => runnerHeader.exec("Exec Fail", () => Assert.equals(1, 2, "Should fail")),
       AssertionError,
       undefined,
-      "TestRunner.exec should propagate assertion errors"
+      "titlesAndExec: TestRunner.exec should propagate assertion errors"
     )
 
     // Test exec with a non-function argument
@@ -1261,7 +1261,7 @@ class TestRunnerTest {
       () => runnerHeader.exec("Not a function", null as unknown as () => void),
       AssertionError,
       undefined,
-      "TestRunner.exec should throw if input is not a function"
+      "titlesAndExec: TestRunner.exec should throw if input is not a function"
     )
 
     // Always restore console.log (for safety)
@@ -1273,9 +1273,9 @@ class TestRunnerTest {
   /** Test the getVerbosity and getVerbosityLabel methods of TestRunner. */
   public static verbosityProperties(): void {
     const runner = new TestRunner(TestRunner.VERBOSITY.SECTION)
-    Assert.equals(runner.getVerbosity(), TestRunner.VERBOSITY.SECTION, "getVerbosity should return SECTION")
-    Assert.equals(runner.getVerbosityLabel(), "SECTION", "getVerbosityLabel should return 'SECTION'")
-    Assert.equals(runner.getVerbosityLabel(), "SUBSECTION", "getVerbosityLabel should return 'SUBSECTION'")
+    Assert.equals(runner.getVerbosity(), TestRunner.VERBOSITY.SECTION, "verbosityProperties: getVerbosity should return SECTION")
+    Assert.equals(runner.getVerbosityLabel(), "SECTION", "verbosityProperties: getVerbosityLabel should return 'SECTION'")
+    Assert.equals(runner.getVerbosityLabel(), "SUBSECTION", "verbosityProperties: getVerbosityLabel should return 'SUBSECTION'")
   }
 
 }
