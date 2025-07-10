@@ -18,13 +18,13 @@
 
 // #region AssertionError
 /**
- * AssertionError is a custom error type used to indicate assertion failures in tests or validation utilities.
+ * `AssertionError` is a custom error type used to indicate assertion failures in tests or validation utilities.
  * This error is intended to be thrown by assertion methods (such as those in a custom Assert class) when a condition
- * that should always be true is found to be false. Using a specific AssertionError type allows for more precise
+ * that should always be true is found to be false. Using a specific `AssertionError` type allows for more precise
  * error handling and clearer reporting in test environments, as assertion failures can be easily distinguished from
  * other kinds of runtime errors.
  * @example
- * ```typescript
+ * ```ts
  * if (actual !== expected) {
  *   throw new AssertionError(`Expected ${expected}, but got ${actual}`)
  * }
@@ -58,10 +58,11 @@ class Assert {
    * Asserts that the provided function throws an error.
    * Optionally checks the error type and message.
    * @param fn - A function that is expected to throw an error.
-   *             Must be passed as a function reference, e.g. '() => codeThatThrows()'.
-   * @param expectedErrorType - (Optional) Expected constructor of the thrown error (e.g., 'TypeError').
+   *             Must be passed as a function reference, e.g. `() => codeThatThrows()`.
+   * @param expectedErrorType - (Optional) Expected constructor of the thrown error (e.g., `TypeError`).
    * @param expectedMessage - (Optional) Exact expected error message.
    * @param message - (Optional) Additional prefix for the error message if the assertion fails.
+   * @returns {asserts fn is () => never} - Asserts that 'fn' will throw an error if the assertion passes.
    * @throws AssertionError - If no error is thrown, or if the thrown error does not match the expected type or message.
    * @example
    * ```ts
@@ -69,7 +70,7 @@ class Assert {
    *   throw new TypeError("Invalid")
    * }, TypeError, "Invalid", "Should throw TypeError")
    * ```
-   * @see Assert.doesNotThrow for the opposite assertion.
+   * @see {@link Assert.doesNotThrow} for the opposite assertion.
    */
   public static throws(
     fn: () => void,
@@ -104,14 +105,15 @@ class Assert {
  /**
  * Asserts that two values are equal by type and value.
  * Supports comparison of primitive types, one-dimensional arrays of primitives,
- * and one-dimensional arrays of objects (deep equality via JSON.stringify).
+ * and one-dimensional arrays of objects (deep equality via `JSON.stringify`).
  * If the values differ, a detailed error is thrown.
  * For arrays, mismatches include index, value, and type.
- * For arrays of objects, a shallow comparison using JSON.stringify is performed.
+ * For arrays of objects, a shallow comparison using `JSON.stringify` is performed.
  * If a value cannot be stringified (e.g., due to circular references), it is treated as "[unprintable value]" in error messages and object equality checks.
  * @param actual - The actual value.
  * @param expected - The expected value.
  * @param message - (Optional) Prefix message included in the thrown error on failure.
+ * @returns {asserts actual is T} - Asserts that 'actual' is of type `T` if the assertion passes.
  * @throws AssertionError - If 'actual' and 'expected' are not equal.
  * @example
  * ```ts
@@ -121,6 +123,7 @@ class Assert {
  * Assert.equals([{x:1}], [{x:1}], "Object array match") // Passes
  * Assert.equals([{x:1}], [{x:2}], "Object array mismatch") // Fails
  * ```
+ * @see {@link Assert.notEquals} for the opposite assertion.
  */
   public static equals<T>(actual: T, expected: T, message: string = ""): asserts actual is T {
     const PREFIX = message ? `${message}: ` : "";
@@ -177,8 +180,9 @@ class Assert {
    * guarding against unsafe or error-throwing `toString()` implementations.
    * @param value - The value to test.
    * @param message - Optional message to prefix in case of failure.
+   * @returns {asserts value is null} - Narrows the type of 'value' to `null` if the assertion passes.
    * @throws AssertionError if the value is not exactly `null`.
-   * * @example
+   * @example
    * ```ts
    * Assert.isNull(null, "Value should be null")
    * Assert.isNull(undefined, "Value should not be undefined") // Fails
@@ -187,7 +191,7 @@ class Assert {
    * Assert.isNull(undefined) // Fails
    * Assert.isNull(0) // Fails
    * ```
-   * @see Assert.isDefined for an alias that checks for defined values (not `null` or `undefined`).
+   * @see {@link Assert.isDefined} for an alias that checks for defined values (not `null` or `undefined`).
    */
   public static isNull(value: unknown, message: string = ""): asserts value is null {
     const PREFIX = message ? `${message}: ` : ""
@@ -207,14 +211,15 @@ class Assert {
    * Narrows the type of 'value' to NonNullable<T> if assertion passes.
    * @param value - The value to test.
    * @param message - Optional message to prefix in case of failure.
+   * @returns {asserts value is NonNullable<T>} - Narrows the type of 'value' to NonNullable<T> if the assertion passes.
    * @throws AssertionError if the value is `null`.
    * @example
    * ```ts
    * Assert.isNotNull(42, "Value should not be null")
    * Assert.isNotNull(null, "Value should be null") // Fails
    * ```
-   * @see Assert.isNull for the opposite assertion.
-   * @see Assert.isDefined for an alias that checks for defined values (not `null` or `undefined`).
+   * @see {@link Assert.isNull} for the opposite assertion.
+   * @see {@link Assert.isDefined} for an alias that checks for defined values (not `null` or `undefined`).
    */
   public static isNotNull<T>(value: T, message: string = ""): asserts value is NonNullable<T> {
     const PREFIX = message ? `${message}: ` : ""
@@ -233,7 +238,8 @@ class Assert {
    * regardless of any conditions or assertions.
    * @param message - (Optional) The failure message to display.
    *                  If not provided, a default "Assertion failed" message is used.
-   * @throws AssertionError - Always throws an AssertionError with the provided message.
+   * @returns {never} - This method never returns, it always throws an error.
+   * @throws AssertionError - Always throws an `AssertionError` with the provided message.
    * @example
    * ```ts
    * Assert.fail("This test should not pass")
@@ -248,8 +254,9 @@ class Assert {
   /**
   * Asserts that a value is of the specified primitive type.
   * @param value - The value to check.
-  * @param type - The expected type as a string ("string", "number", etc.)
+  * @param type - The expected type as a string (`string`, `number`, etc.)
   * @param message - Optional error message.
+  * @returns {void} - This method does not return a value.
   * @throws AssertionError - If the type does not match.
   * @example
   * ```ts
@@ -259,11 +266,11 @@ class Assert {
   * isType([], "object", "Expected an object"); // passes
   * isType(null, "object", "Expected an object"); // throws
   * ```
-  * @remarks This method checks the type using `typeof` and throws an AssertionError if the type does not match.
+  * @remarks This method checks the type using `typeof` and throws an `AssertionError` if the type does not match.
   *          It is useful for validating input types in functions or methods.
-  *         The `type` parameter must be one of the following strings: "string", "number", "boolean", "object", "function", "undefined", "symbol", or "bigint".
+  *         The `type` parameter must be one of the following strings: `string`, `number`, `boolean`, `object`, `function`, `undefined`, `symbol`, or `bigint`.
   *          If the value is `null`, it will be considered an object, which is consistent with JavaScript's behavior.
-  * @see Assert.isNotType for the opposite assertion.
+  * @see {@link Assert.isNotType} for the opposite assertion.
   */
   public static isType(
     value: unknown,
@@ -283,8 +290,9 @@ class Assert {
 /**
  * Asserts that a value is NOT of the specified primitive type.
  * @param value - The value to check.
- * @param type - The unwanted type as a string ("string", "number", etc.)
+ * @param type - The unwanted type as a string (`string`, `number`, etc.)
  * @param message - Optional error message.
+ * @returns {void} - This method does not return a value.
  * @throws AssertionError - If the type matches.
  * @example
  * ```ts
@@ -293,9 +301,9 @@ class Assert {
  * isNotType({}, "object"); // throws
  * isNotType(null, "object", "Should not be object"); // throws (null is object in JS)
  * ```
- * @remarks This method checks the type using `typeof` and throws an AssertionError if the type matches.
- *          The `type` parameter must be one of the following strings: "string", "number", "boolean", "object", "function", "undefined", "symbol", or "bigint".
- * @see Assert.isType for the positive assertion.
+ * @remarks This method checks the type using `typeof` and throws an `AssertionError` if the type matches.
+ *          The `type` parameter must be one of the following strings: `string`, `number`, `boolean`, `object`, `function`, `undefined`, `symbol`, or `bigint`.
+ * @see {@link Assert.isType} for the positive assertion.
  */
 public static isNotType(
   value: unknown,
@@ -314,10 +322,11 @@ public static isNotType(
   // #region doesNotThrow
   /**
    * Asserts that the provided function does NOT throw an error.
-   * If an error is thrown, an AssertionError is thrown with the provided message or details of the error.
+   * If an error is thrown, an `AssertionError` is thrown with the provided message or details of the error.
    * @param fn - A function that is expected to NOT throw.
-   *             Must be passed as a function reference, e.g. '() => codeThatShouldNotThrow()'.
+   *             Must be passed as a function reference, e.g. `() => codeThatShouldNotThrow()`.
    * @param message - (Optional) Prefix for the error message if the assertion fails.
+   * @return {void} - This method does not return a value.
    * @throws AssertionError - If the function throws any error.
    * @example
    * ```ts
@@ -325,7 +334,7 @@ public static isNotType(
    *   const x = 1 + 1
    * }, "Should not throw any error")
    * ```
-   * @see Assert.throws for the opposite assertion.
+   * @see {@link Assert.throws} for the opposite assertion.
    */
   public static doesNotThrow(fn: () => void, message: string = ""): void {
     const PREFIX = message ? `${message}: ` : ""
@@ -343,13 +352,14 @@ public static isNotType(
    * Throws AssertionError if the value is not truthy.
    * @param value - The value to test for truthiness.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {asserts value} - Narrows the type of 'value' to its original type if the assertion passes.
    * @throws AssertionError - If the value is not truthy.
    * @example
    * ```ts
    * Assert.isTrue(1 < 2, "Math sanity")
    * Assert.isTrue("non-empty string", "String should be truthy")
    * ```
-   * @see Assert.isFalse for the opposite assertion.
+   * @see {@link Assert.isFalse} for the opposite assertion.
    */
   public static isTrue(value: unknown, message: string = ""): asserts value {
     const PREFIX = message ? `${message}: ` : ""
@@ -365,6 +375,7 @@ public static isNotType(
    * Throws AssertionError if the value is not falsy.
    * @param value - The value to test for falsiness.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {void} - This method does not return a value.
    * @throws AssertionError - If the value is not falsy.
    * @example
    * ```ts
@@ -375,7 +386,7 @@ public static isNotType(
    * Assert.isFalse(0, "Zero should be falsy")
    * Assert.isFalse("", "Empty string should be falsy")
    * ```
-   * @see Assert.isTrue for the opposite assertion.
+   * @see {@link Assert.isTrue} for the opposite assertion.
    */
   public static isFalse(value: unknown, message: string = ""): void {
     const PREFIX = message ? `${message}: ` : ""
@@ -391,6 +402,7 @@ public static isNotType(
    * Throws AssertionError if the value is not exactly `undefined`.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {asserts value is undefined} - Narrows the type of 'value' to `undefined` if the assertion passes.
    * @throws AssertionError - If the value is not `undefined`.
    * @example
    * ```ts
@@ -398,8 +410,8 @@ public static isNotType(
    * Assert.isUndefined(undefined)
    * Assert.isUndefined(null, "Null is not undefined") // Fails 
    * ```
-   * @see Assert.isNotUndefined for the opposite assertion.
-   * @see Assert.isDefined for an alias that checks for defined values (not `undefined`).
+   * @see {@link Assert.isNotUndefined} for the opposite assertion.
+   * @see {@link Assert.isDefined} for an alias that checks for defined values (not `undefined`).
    */
   public static isUndefined(value: unknown, message: string = ""): asserts value is undefined {
     const PREFIX = message ? `${message}: ` : ""
@@ -413,9 +425,10 @@ public static isNotType(
   /**
    * Asserts that the given value is not `undefined`.
    * Narrows the type to exclude undefined.
-   * Throws AssertionError if the value is `undefined`.
+   * Throws `AssertionError` if the value is `undefined`.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {void} - This method does not return a value.
    * @throws AssertionError - If the value is `undefined`.
    * @example
    * ```ts
@@ -424,8 +437,8 @@ public static isNotType(
    * Assert.isNotUndefined(42)
    * Assert.isNotUndefined(null)
    * ```
-   * @see Assert.isUndefined for the opposite assertion.
-   * @see Assert.isDefined for an alias that checks for defined values (not `undefined`).
+   * @see {@link Assert.isUndefined} for the opposite assertion.
+   * @see {@link Assert.isDefined} for an alias that checks for defined values (not `undefined`).
    */
   public static isNotUndefined<T>(value: T, message: string = ""): asserts value is Exclude<T, undefined> {
     const PREFIX = message ? `${message}: ` : ""
@@ -438,9 +451,10 @@ public static isNotType(
   // #region isDefined
   /**
    * Asserts that the given value is defined (not `undefined`).
-   * Alias for isNotUndefined.
+   * Alias for `isNotUndefined` method.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {void} - This method does not return a value.
    * @throws AssertionError - If the value is `undefined`.
    * @example
    * ```ts
@@ -449,8 +463,8 @@ public static isNotType(
    * Assert.isDefined(42)
    * Assert.isDefined(null)
    * ```
-   * @see Assert.isNotUndefined for the opposite assertion.
-   * @see Assert.isUndefined for an alias that checks for undefined values.
+   * @see {@link Assert.isNotUndefined} for the opposite assertion.
+   * @see {@link Assert.isUndefined} for an alias that checks for undefined values.
    */
   public static isDefined<T>(value: T, message: string = ""): asserts value is Exclude<T, undefined> {
     Assert.isNotUndefined(value, message)
@@ -460,11 +474,12 @@ public static isNotType(
   // #region notEquals
   /**
    * Asserts that two values are not equal (deep comparison).
-   * For arrays and objects, uses deep comparison (via JSON.stringify).
-   * Throws AssertionError if the values are equal.
+   * For arrays and objects, uses deep comparison (via `JSON.stringify`).
+   * Throws `AssertionError` if the values are equal.
    * @param actual - The actual value.
    * @param notExpected - The value that should NOT match.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @returns {void} - This method does not return a value.
    * @throws AssertionError - If values are equal.
    * @example
    * ````ts
@@ -474,7 +489,7 @@ public static isNotType(
    * Assert.notEquals(1, 2)
    * Assert.notEquals([1,2], [2,1])
    * ```
-   * @see Assert.equals for the opposite assertion.
+   * @see {@link Assert.equals} for the opposite assertion.
    */
   public static notEquals<T>(actual: T, notExpected: T, message: string = ""): void {
     const PREFIX = message ? `${message}: ` : ""
@@ -490,12 +505,13 @@ public static isNotType(
   // #region contains
   /**
    * Asserts that an array or string contains a specified value or substring.
-   * For arrays, uses indexOf for shallow equality.
-   * For strings, uses indexOf for substring check.
-   * Throws AssertionError if the value is not found.
+   * For arrays, uses `indexOf` for shallow equality.
+   * For strings, uses `indexOf` for substring check.
+   * Throws `AssertionError` if the value is not found.
    * @param container - The array or string to search.
    * @param value - The value (or substring) to search for.
    * @param message - (Optional) Message to prefix in case of failure.
+   * @return {void} - This method does not return a value.
    * @throws AssertionError - If the value is not found.
    * @example
    * ```ts
@@ -528,10 +544,11 @@ public static isNotType(
   // #region isInstanceOf
   /**
    * Asserts that the value is an instance of the specified constructor.
-   * Throws AssertionError if not.
+   * Throws `AssertionError` if not.
    * @param value - The value to check.
    * @param ctor - The class/constructor function.
    * @param message - Optional error message prefix.
+   * @return {void} - This method does not return a value.
    * @throws AssertionError - If the value is not an instance of the constructor.
    * @example
    * ```ts
@@ -568,10 +585,11 @@ public static isNotType(
   // #region isNotInstanceOf
   /**
    * Asserts that the value is NOT an instance of the specified constructor.
-   * Throws AssertionError if it is.
+   * Throws `AssertionError` if it is.
    * @param value - The value to check.
    * @param ctor - The class/constructor function.
    * @param message - Optional error message prefix.
+   * @return {void} - This method does not return a value.
    * @throws AssertionError - If the value is an instance of the constructor.
    * @example
    * ```ts
@@ -581,7 +599,7 @@ public static isNotType(
    * Assert.isNotInstanceOf(instance, MyClass) // Fails
    * Assert.isNotInstanceOf(42, MyClass) // Passes, since 42 is not an instance of MyClass
    * ```
-   * @see Assert.isInstanceOf for the opposite assertion.
+   * @see {@link Assert.isInstanceOf} for the opposite assertion.
    */
   public static isNotInstanceOf(
     value: unknown,
@@ -608,6 +626,7 @@ public static isNotType(
    * @param a - Actual array.
    * @param b - Expected array.
    * @param message - (Optional) Prefix message for errors.
+   * @returns {boolean} - Returns true if arrays are equal, otherwise throws an error.
    * @throws AssertionError - If arrays differ in length, type, or value at any index.
    * @private
    */
@@ -647,8 +666,8 @@ public static isNotType(
     /**
    * Returns a safe string representation of any value, handling cases where
    * toString may throw or misbehave. Used internally by assertion methods.
-   * Tries JSON.stringify, then value.toString(), then Object.prototype.toString.call(value).
-   * If all fail, returns "[unprintable value]".
+   * Tries `JSON.stringify`, then `value.toString()`, then `Object.prototype.toString.call(value)`.
+   * If all fail, returns `[unprintable value]`.
    * @param value - The value to stringify.
    * @returns A string representation of the value, or "[unprintable value]" if not possible.
    * @private
@@ -692,13 +711,14 @@ public static isNotType(
  * A utility class for managing and running test cases with controlled console output.
  * TestRunner' supports configurable verbosity levels and allows structured logging
  * with indentation for better test output organization. It is primarily designed for
- * test cases using assertion methods (e.g., 'Assert.equals', 'Assert.throws').
- * Verbosity can be set via the 'TestRunner.VERBOSITY': constant object (enum pattern)
- * - 'OFF' (0): No output
- * - 'HEADER' (1): High-level section headers only
- * - 'SECTION' (2): Full nested titles
+ * test cases using assertion methods (e.g., `Assert.equals`, `Assert.throws`).
+ * Verbosity can be set via the `TestRunner.VERBOSITY`: constant object (enum pattern)
+ * - `OFF` (0): No output
+ * - `HEADER` (1): High-level section headers only
+ * - `SECTION` (2): Full nested titles
+ * - `SUBSECTION` (3): Detailed test case titles
  * Verbosity level is incremental, i.e. allows all logging events with indentation level that is
- * lower or equal than TestRunner.VERBOSITY.
+ * lower or equal than `TestRunner.VERBOSITY`.
  *
  * @example
  * ```ts
@@ -721,9 +741,9 @@ public static isNotType(
  * the error will be caught and reported with context.
  */
 class TestRunner {
-  private static readonly START = "START" as const;
-  private static readonly END = "END" as const;
-  private static readonly HEADER_TK = "*";
+  private static readonly START = "START" as const
+  private static readonly END = "END" as const
+  private static readonly HEADER_TK = "*"
 
   /**Verbosity level */
   public static readonly VERBOSITY = {
