@@ -33,7 +33,8 @@
     "test": "npx ts-node --project tsconfig.json wrappers/main-wrapper.ts",
     "debug": "npx ts-node --project tsconfig.test.json wrappers/main-wrapper.ts --debug",
     "doc:ts:install": "npm install --save-dev typedoc",
-    "doc:ts:run": "npx typedoc src/unit-test-framework.ts --out docs/typedoc --readme none --tsconfig tsconfig.json --theme default"
+    "doc:ts:run": "npx typedoc src/unit-test-framework.ts --out docs/typedoc --readme none --tsconfig tsconfig.json --theme default",
+    "cleanup-branches": "git branch --merged main | grep -v 'main$' | grep -v '^\\*' | xargs -n 1 git branch -d"
   },
   "keywords": [
     "office-scripts",
