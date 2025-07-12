@@ -1,4 +1,3 @@
-// main test file for the unit test framework
 
 // #region main.ts
 
