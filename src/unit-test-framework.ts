@@ -29,15 +29,17 @@
  *   throw new AssertionError(`Expected ${expected}, but got ${actual}`)
  * }
  * ```
- * 
  * Features:
  * - Inherits from the built-in Error class.
  * - Sets the error name to "AssertionError" for easier identification.
  * - Accepts a message parameter describing the assertion failure.
- * 
- * This class is intentionally simple—no extra methods or properties are added, to keep assertion failures clear and unambiguous.
+ * @remarks This class is intentionally simple—no extra methods or properties are added, to keep assertion failures clear and unambiguous.
  */
 class AssertionError extends Error {
+  /** Constructor for `AssertionError`.
+   * @param message - A descriptive message that explains the assertion failure.
+   *                  This message will be included in the error stack trace.
+   */
   constructor(message: string) {
     super(message)
     this.name = "AssertionError"
@@ -63,7 +65,7 @@ class Assert {
    * @param expectedErrorType - (Optional) Expected constructor of the thrown error (e.g., `TypeError`).
    * @param expectedMessage - (Optional) Exact expected error message.
    * @param message - (Optional) Additional prefix for the error message if the assertion fails.
-   * @returns {asserts fn is () => never} - Asserts that 'fn' will throw an error if the assertion passes.
+   * @returns {asserts fn is () => never} - Asserts that fn will throw an error if the assertion passes.
    * @throws AssertionError - If no error is thrown, or if the thrown error does not match the expected type or message.
    * @example
    * ```ts
@@ -137,12 +139,12 @@ class Assert {
  * If the values differ, a detailed error is thrown.
  * For arrays, mismatches include index, value, and type.
  * For arrays of objects, a shallow comparison using `JSON.stringify` is performed.
- * If a value cannot be stringified (e.g., due to circular references), it is treated as "[unprintable value]" in error messages and object equality checks.
+ * If a value cannot be stringified (e.g., due to circular references), it is treated as `[unprintable value]` in error messages and object equality checks.
  * @param actual - The actual value.
  * @param expected - The expected value.
  * @param message - (Optional) Prefix message included in the thrown error on failure.
- * @returns {asserts actual is T} - Asserts that 'actual' is of type `T` if the assertion passes.
- * @throws AssertionError - If 'actual' and 'expected' are not equal.
+ * @returns {asserts actual is T} - Asserts that actual is of type `T` if the assertion passes.
+ * @throws AssertionError - If actual and expected are not equal.
  * @example
  * ```ts
  * Assert.equals(2 + 2, 4, "Simple math")
@@ -267,10 +269,10 @@ class Assert {
    * Asserts that the given value is not `null`.
    * Provides a robust stringification of the value for error messages,
    * guarding against unsafe or error-throwing `toString()` implementations.
-   * Narrows the type of 'value' to NonNullable<T> if assertion passes.
+   * Narrows the type of value to `NonNullable<T>` if assertion passes.
    * @param value - The value to test.
    * @param message - Optional message to prefix in case of failure.
-   * @returns {asserts value is NonNullable<T>} - Narrows the type of 'value' to NonNullable<T> if the assertion passes.
+   * @returns {asserts value is NonNullable<T>} - Narrows the type of value to `NonNullable<T>` if the assertion passes.
    * @throws AssertionError if the value is `null`.
    * @example
    * ```ts
@@ -296,7 +298,7 @@ class Assert {
    * This method is used to explicitly indicate that a test case has failed,
    * regardless of any conditions or assertions.
    * @param message - (Optional) The failure message to display.
-   *                  If not provided, a default "Assertion failed" message is used.
+   *                  If not provided, a default `Assertion failed` message is used.
    * @returns {never} - This method never returns, it always throws an error.
    * @throws AssertionError - Always throws an `AssertionError` with the provided message.
    * @example
@@ -384,7 +386,7 @@ public static isNotType(
    * Throws `AssertionError` if the value is not truthy.
    * @param value - The value to test for truthiness.
    * @param message - (Optional) Message to prefix in case of failure.
-   * @returns {asserts value} - Narrows the type of 'value' to its original type if the assertion passes.
+   * @returns {asserts value} - Narrows the type of value to its original type if the assertion passes.
    * @throws AssertionError - If the value is not truthy.
    * @example
    * ```ts
@@ -434,7 +436,7 @@ public static isNotType(
    * Throws `AssertionError` if the value is not exactly `undefined`.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
-   * @returns {asserts value is undefined} - Narrows the type of 'value' to `undefined` if the assertion passes.
+   * @returns {asserts value is undefined} - Narrows the type of value to `undefined` if the assertion passes.
    * @throws AssertionError - If the value is not `undefined`.
    * @example
    * ```ts
@@ -456,7 +458,7 @@ public static isNotType(
   // #region isNotUndefined
   /**
    * Asserts that the given value is not `undefined`.
-   * Narrows the type to exclude undefined.
+   * Narrows the type to exclude `undefined`.
    * Throws `AssertionError` if the value is `undefined`.
    * @param value - The value to check.
    * @param message - (Optional) Message to prefix in case of failure.
@@ -710,43 +712,53 @@ public static isNotType(
 // #region TestRunner
 /**
  * A utility class for managing and running test cases with controlled console output.
- * TestRunner' supports configurable verbosity levels and allows structured logging
+ * `TestRunner` supports configurable verbosity levels and allows structured logging
  * with indentation for better test output organization. It is primarily designed for
  * test cases using assertion methods (e.g., `Assert.equals`, `Assert.throws`).
- * Verbosity can be set via the `TestRunner.VERBOSITY`: constant object (enum pattern)
+ * Verbosity can be set via the `TestRunner.VERBOSITY` in the constructor: constant object (enum pattern)
  * - `OFF` (0): No output
  * - `HEADER` (1): High-level section headers only
- * - `SECTION` (2): Full nested titles
- * - `SUBSECTION` (3): Detailed test case titles
+ * - `SECTION` (2): First level nested title
+ * - `SUBSECTION` (3): Second level nested title
+ * 
  * Verbosity level is incremental, i.e. allows all logging events with indentation level that is
  * lower or equal than `TestRunner.VERBOSITY`.
  *
  * @example
  * ```ts
- * const runner = new TestRunner()
- * runner.exec("Simple Length Test", () => {
- *   Assert.equals("test".length, 4)
+ * const runner = new TestRunner(TestRunner.VERBOSITY.SECTION)
+ * title("Start Testing") // default indentation is 1 (HEADER)
+ * runner.exec("Simple Length Test", () => { // default indentation is 2 (SECTION)
+ *   Assert.equals("test".length, 4) // test passed
  * })
  * function sum(a: number, b: number): number {return a + b}
  * const a = 1, b = 2
  * runner.exec("Sum Test", () => {
  *   Assert.equals(sum(a, b), 3) // test passed
  * })
+ * title("End Testing")
  *
- * // Example output (if verbosity is set to show headers):
+ * // Output will look like:
+ * // * Start Testing *
+ * // ** START: Simple Length Test **
+ * // ** END: Simple Length Test **
  * // ** START: Sum Test **
  * // ** END: Sum Test **
+ * // * End Testing *
  * ```
  *
- * @remarks Test functions are expected to use `Assert` methods internally. If an assertion fails,
+ * @remarks 
+ * - Test functions are expected to use `Assert` methods internally. If an assertion fails,
  * the error will be caught and reported with context.
+ * - For a better organization, consider to put all test cases withing a single `TestCase` class
+ * where each test case scenario is defined with a static method.
  */
 class TestRunner {
-  private static readonly START = "START" as const
-  private static readonly END = "END" as const
-  private static readonly HEADER_TK = "*"
+  private static readonly START = "START" as const  // Prefix for start of a test case
+  private static readonly END = "END" as const      // Prefix for end of a test case
+  private static readonly HEADER_TK = "*"           // Token for title lines
 
-  /**Verbosity level */
+  /**Allowed verbosity levels, to control the output of `TestRunner.title` method.*/
   public static readonly VERBOSITY = {
     OFF: 0,
     HEADER: 1,
@@ -760,20 +772,21 @@ class TestRunner {
     return acc;
   }, {} as Record<number, string>)
 
+  // Default verbosity level to initialize the TestRunner, if not specified
   private static readonly DEFAULT_VERBOSITY = TestRunner.VERBOSITY.HEADER
+
+  /** The verbosity level of the TestRunner instance.*/
   private readonly _verbosity: typeof TestRunner.VERBOSITY[keyof typeof TestRunner.VERBOSITY]
 
-  /**Constructs a 'TestRunner' with the specified verbosity level.
-   * @param verbosity - One of the values from 'TestRunner.VERBOSITY' (default: 'HEADER')
+  /**Constructs a `TestRunner` with the specified verbosity level.
+   * @param verbosity - One of the values from `TestRunner.VERBOSITY` (default: `HEADER(1)`)
    */
   public constructor(verbosity: typeof TestRunner.VERBOSITY[keyof typeof TestRunner.VERBOSITY] = TestRunner.DEFAULT_VERBOSITY) {
     this._verbosity = verbosity
   }
 
   /** Returns the current verbosity level. 
-   * This is useful for checking the current logging level
-   * and adjusting the output accordingly.
-   * @returns {number} - The current verbosity level as defined in 'TestRunner.VERBOSITY'.
+   * @returns {number} - The current verbosity level as defined in `TestRunner.VERBOSITY`.
    * @example
    * ```ts
    * const runner = new TestRunner(TestRunner.VERBOSITY.HEADER)
@@ -807,8 +820,8 @@ class TestRunner {
    * The number of `*` will depend on the indentation level, for `2` it shows
    * `**` as prefix and suffix.
    * @param msg - The message to display
-   * @param indent - Indentation level (default: `1`). The indentation level is indicated
-   *                with the number of suffix `*`.
+   * @param indent - Indentation level (default: `1(HEADER)`). The indentation level is indicated
+   *                with the number of `*` characters used as prefix and suffix to the title.
    * @returns {void} - This method does not return a value.
    * @example
    * ```ts
@@ -829,15 +842,22 @@ class TestRunner {
     }
   }
 
-  /** See detailed JSDoc in class documentation 
+  /** Executes a test case with a title and handles assertions.
+   * This method logs the start and end of the test case with titles (using `TestRunner.title` method)
+   * if the verbosity level allows it.
+   * It executes the provided function which should contain assertions.
+   * If an assertion fails, it will throw an `AssertionError`. 
+   * See detailed JSDoc in class documentation 
    * @param name - The name of the test case.
    * @param fn - The function containing the test logic. It should contain assertions using `Assert` methods.
-   * @param indent - Indentation level for the title (default: `2`). The indentation level is indicated
+   * @param indent - Indentation level for the title (default: `2(SECTION)`). The indentation level is indicated
    *                 with the number of suffix `*`.
-   * @throws AssertionError - If an assertion fails within the test function.
+   * @throws AssertionError - If an assertion fails within the test function fn. 
+   *                        - If the provided fn is not a function.
    * @returns {void} - This method does not return a value.
-   * @remarks This method is used to execute a test case, logging the start and end of the test with titles.
-   *          It is designed to work with the `Assert` class for assertions.
+   * @remarks Always pass a function reference using `() => ....`
+   *          If you pass a direct function call, the code will execute before
+   *          and not at indicated place it should be executed inside this method and it may produce unexpected results.
    * @example
    * ```ts
    * const runner = new TestRunner()
@@ -846,7 +866,7 @@ class TestRunner {
    * })
    * ```
   */
-  public exec(name: string, fn: () => void, indent: number = 2): void {
+  public exec(name: string, fn: () => void, indent: number = TestRunner.VERBOSITY.SECTION): void {
     this.title(`${TestRunner.START} ${name}`, indent);
     if (typeof fn !== "function") {
       throw new AssertionError("TestRunner.exec() expects a function as input.");

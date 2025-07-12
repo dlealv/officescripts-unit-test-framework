@@ -200,6 +200,8 @@ runner.exec("My Test Name", () => {
   Assert.equals(1 + 1, 2)
 }, 2) // The '2' is the indent level for this test (prints if verbosity >= 2)
 ```
+**Note:**  
+When using `TestRunner.exec`, always pass the test code as a function reference (e.g., `() => ...` or `function() { ... }`). This ensures the test is executed at the correct time within the `exec` method, preserving the intended order of output and test execution. Passing a direct function call (e.g., `runner.exec("Test", myTestFunction())`) will execute the test immediately—before `exec` can manage output or error handling—leading to unexpected results such as out-of-order titles or missed error reporting.
 
 #### Structured Output
 
